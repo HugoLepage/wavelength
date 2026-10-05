@@ -1,0 +1,46 @@
+---
+// Sign-in overlay for online play: a name and a password, where a name nobody
+// has taken yet creates the account on the spot (auth.js). The critter badge
+// above the form follows the name as it is typed — it is the avatar that name
+// will wear in the lobby and in games. Driven by src/scripts/lobby.js.
+import '../../styles/online.css';
+---
+
+<div class="overlay" id="login-overlay">
+  <div class="modal login-modal" role="dialog" aria-modal="true" aria-labelledby="login-title" aria-describedby="login-sub">
+    <button class="btn icon ghost small modal-close" type="button" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button>
+
+    <div class="login-avatar" id="login-avatar" aria-hidden="true"></div>
+    <h2 class="modal-title" id="login-title">Play online</h2>
+    <p class="modal-sub" id="login-sub">A new name creates an account.</p>
+
+    <form class="login-form stack" id="login-form" novalidate>
+      <label class="field" id="login-name-field">
+        <span class="field-label">Name</span>
+        <input
+          id="login-name"
+          type="text"
+          autocomplete="username"
+          autocapitalize="off"
+          autocorrect="off"
+          spellcheck="false"
+          maxlength="20"
+          enterkeyhint="next"
+          placeholder="e.g. mia"
+          required
+          data-autofocus
+        />
+      </label>
+      <label class="field" id="login-password-field">
+        <span class="field-label">Password</span>
+        <input id="login-password" type="password" autocomplete="current-password" maxlength="64" enterkeyhint="go" required />
+      </label>
+      <p class="field-error login-error" id="login-error" role="alert"></p>
+      <button class="btn primary big block login-submit" id="btn-login" type="submit">
+        <span class="btn-label">Let's go</span>
+      </button>
+    </form>
+  </div>
+</div>

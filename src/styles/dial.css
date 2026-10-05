@@ -1,0 +1,564 @@
+/* The dial (Dial.astro + dial.js): the half-circle device and its spectrum
+   card. Colours come from the --dial-* and --c-band-* tokens in base.css.
+
+   Sizing: the dial is as wide as its container allows, up to --dial-max
+   (560px), but never taller than the viewport minus --dial-reserve — the
+   height the rest of the screen needs (top bar, header strip, card, panel).
+   The SVG is 420 × 232, so width = height × 1.81. Screens tune the reserve;
+   see "game screen layout" in base.css. */
+
+.dial {
+  /* --dial-reserve and --dial-max are inherited from the screen (defaults
+     300px / 560px), so they are read with fallbacks, never set here. */
+  --dial-accent: var(--c-primary);
+  --end-l: #2ec4b6;
+  --end-r: #ff5a4e;
+  position: relative;
+  container-type: inline-size; /* the card's type and layout follow the dial's width */
+  width: 100%;
+  max-width: clamp(210px, calc((100vh - var(--dial-reserve, 300px)) * 1.81), var(--dial-max, 560px));
+  max-width: clamp(210px, calc((100svh - var(--dial-reserve, 300px)) * 1.81), var(--dial-max, 560px));
+  margin-inline: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dial-body {
+  position: relative;
+  z-index: 2; /* the card slides out from under the dial's base */
+}
+
+/* The dome's soft shadow, painted once on a static element behind the SVG
+   (a filter on the SVG itself would re-run on every animated frame). */
+.dial-body::before {
+  content: '';
+  position: absolute;
+  left: 1.43%;
+  right: 1.43%;
+  top: 2.6%;
+  bottom: 1.7%;
+  border-radius: 50% 50% 2.4% 2.4% / 91.9% 91.9% 4% 4%;
+  box-shadow:
+    0 16px 34px -8px var(--dial-shadow),
+    0 3px 0 rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+
+.dial-svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  touch-action: pan-y;
+  outline: none;
+}
+
+.dial.is-interactive .dial-svg {
+  touch-action: none;
+  cursor: grab;
+}
+
+.dial.is-dragging .dial-svg {
+  cursor: grabbing;
+}
+
+/* --- body, rim, scale --- */
+
+.dial-rim {
+  fill: var(--dial-rim);
+}
+
+.dial-rim-hi {
+  fill: none;
+  stroke: var(--dial-rim-hi);
+  stroke-width: 2;
+}
+
+.dial-ticks path {
+  stroke: var(--dial-tick);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0.45;
+}
+
+.dial-ticks path.major {
+  stroke-width: 2.6;
+  opacity: 0.85;
+}
+
+.dial-ticks path.mid {
+  stroke: var(--c-band-2);
+  opacity: 1;
+}
+
+/* --- face and target wheel --- */
+
+.dial-face {
+  fill: var(--dial-face);
+}
+
+.dial-grooves circle {
+  fill: none;
+  stroke: var(--dial-groove);
+  stroke-width: 1.2;
+}
+
+.dial-dots circle {
+  fill: var(--dial-dot);
+}
+
+.dial-band,
+.dial-ghost path {
+  stroke: var(--dial-face);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  transition: opacity 0.35s ease;
+}
+
+.dial-band.p2,
+.dial-ghost .p2 {
+  fill: var(--c-band-2);
+}
+
+.dial-band.p3,
+.dial-ghost .p3 {
+  fill: var(--c-band-3);
+}
+
+.dial-band.p4,
+.dial-ghost .p4 {
+  fill: var(--c-band-4);
+}
+
+.dial-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  fill: var(--c-band-ink);
+  opacity: 0.85;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.dial-num.p4 {
+  fill: #ffffff;
+  opacity: 1;
+}
+
+.dial-glow {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 0;
+  stroke-linejoin: round;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dial-stop-shade {
+  stop-color: var(--dial-shade);
+}
+
+.dial-shade {
+  pointer-events: none;
+}
+
+/* --- shutter --- */
+
+.dial-stop-sh1 {
+  stop-color: var(--shutter-1);
+}
+
+.dial-stop-sh2 {
+  stop-color: var(--shutter-2);
+}
+
+.dial-stop-sheen {
+  stop-color: var(--shutter-sheen);
+}
+
+.dial-waves path {
+  fill: none;
+  stroke: var(--shutter-line);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.dial-shutter-lip {
+  fill: var(--shutter-lip);
+}
+
+/* --- needle --- */
+
+.dial-needle-shadow {
+  fill: var(--dial-needle-shadow);
+}
+
+.dial-needle-blade {
+  fill: var(--dial-needle);
+  stroke: var(--dial-needle-edge);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+.dial-knob {
+  fill: var(--dial-accent);
+  stroke: var(--dial-knob-edge);
+  stroke-width: 3.5;
+  transition: fill 0.3s ease;
+}
+
+.dial-knob-dot {
+  fill: var(--dial-knob-edge);
+}
+
+.dial-knob-glow {
+  fill: var(--dial-accent);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 0.25s ease, fill 0.3s ease;
+}
+
+.dial-knob-ring {
+  fill: none;
+  stroke: var(--dial-accent);
+  stroke-width: 3;
+  opacity: 0;
+}
+
+.dial.is-interactive .dial-knob-glow {
+  opacity: 0.22;
+  animation: knob-breathe 2.2s ease-in-out infinite;
+}
+
+.dial.is-dragging .dial-knob-glow {
+  opacity: 0.34;
+  animation: none;
+  scale: 1.12;
+}
+
+/* Only a dial that takes input shows the keyboard ring. */
+.dial.is-interactive .dial-svg:focus-visible .dial-knob-ring {
+  opacity: 1;
+}
+
+@keyframes knob-breathe {
+  0%,
+  100% {
+    scale: 0.82;
+  }
+  50% {
+    scale: 1.08;
+  }
+}
+
+.dial-cap {
+  fill: var(--dial-needle);
+  stroke: var(--dial-needle-edge);
+  stroke-width: 2.5;
+}
+
+.dial-cap-hi {
+  fill: #ffffff;
+  opacity: 0.35;
+}
+
+/* --- reveal --- */
+
+.dial.is-revealed .dial-band:not(.is-hit) {
+  opacity: 0.42;
+}
+
+.dial.is-revealed .dial-num:not(.is-hit) {
+  opacity: 0.4;
+}
+
+.dial-band.is-hit {
+  animation: band-flash 0.7s ease-out;
+}
+
+.dial-glow.is-hit {
+  animation: band-glow 1.15s ease-out 2;
+}
+
+.dial.is-bullseye .dial-glow.is-hit {
+  animation-iteration-count: 3;
+}
+
+.dial-num.is-hit {
+  animation: num-pop 0.6s var(--ease-spring);
+}
+
+@keyframes band-flash {
+  0% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 0.55;
+  }
+  45% {
+    opacity: 1;
+  }
+}
+
+@keyframes band-glow {
+  0% {
+    stroke-width: 2;
+    opacity: 0.95;
+  }
+  100% {
+    stroke-width: 22;
+    opacity: 0;
+  }
+}
+
+@keyframes num-pop {
+  0% {
+    scale: 1;
+  }
+  40% {
+    scale: 1.7;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+/* The "+N" that floats over the band hit (or "0" on a miss). */
+.dial-bubble {
+  --bubble: var(--c-band-4);
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  z-index: 2;
+  padding: 0.12em 0.55em 0.16em;
+  border-radius: 999px;
+  background: var(--bubble);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(22px, 6.4vw, 36px);
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.22),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.14),
+    0 0 0 3px #ffffff;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.dial-bubble.p2 {
+  --bubble: #f2ac00;
+}
+
+.dial-bubble.p3 {
+  --bubble: var(--c-band-3);
+}
+
+.dial-bubble.miss {
+  --bubble: var(--c-ink-soft);
+}
+
+.dial-bubble.show {
+  animation: bubble-pop 0.62s var(--ease-spring) forwards;
+}
+
+.dial.is-bullseye .dial-bubble.show {
+  animation:
+    bubble-pop 0.62s var(--ease-spring) forwards,
+    bubble-bob 1.2s ease-in-out 0.62s infinite;
+}
+
+@keyframes bubble-pop {
+  0% {
+    transform: translate(-50%, -20%) scale(0.2) rotate(-12deg);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -62%) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes bubble-bob {
+  0%,
+  100% {
+    transform: translate(-50%, -62%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -70%) scale(1.06);
+  }
+}
+
+/* --- spectrum card ---
+   Wide dials: [left] ⟷ [right] in one row. Narrow dials (the usual phone):
+   the two ends side by side with the bar running underneath. Sized by
+   container queries on .dial, so it follows the dial, not the viewport. */
+
+.dial-card {
+  position: relative;
+  z-index: 1;
+  margin-top: -3.2%;
+  padding: 0 4%;
+}
+
+.dial-card-face {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  padding: calc(10px + 2.4%) 18px 12px;
+  border-radius: 0 0 20px 20px;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--end-l) 16%, var(--c-surface)),
+      var(--c-surface) 38%,
+      var(--c-surface) 62%,
+      color-mix(in srgb, var(--end-r) 16%, var(--c-surface))
+    );
+  box-shadow:
+    inset 5px 0 0 var(--end-l),
+    inset -5px 0 0 var(--end-r),
+    var(--sh-2);
+  transform-origin: 50% 0;
+  backface-visibility: hidden;
+}
+
+.dial-end {
+  min-width: 0;
+}
+
+.dial-end-left {
+  text-align: left;
+}
+
+.dial-end-right {
+  text-align: right;
+}
+
+.dial-end-text {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(15px, 4cqi, 22px);
+  line-height: 1.12;
+  text-wrap: balance;
+  overflow-wrap: break-word; /* last resort, for a word no hyphenation can fit */
+  -webkit-hyphens: auto; /* Safari < 17 only knows the prefixed one; the build adds no prefixes */
+  hyphens: auto;
+}
+
+.dial-bar {
+  position: relative;
+  width: clamp(30px, 10cqi, 84px);
+  height: 8px;
+  margin: 0 8px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--end-l), var(--end-r));
+}
+
+/* Arrowheads at both ends of the bar. */
+.dial-bar::before,
+.dial-bar::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  transform: translateY(-50%);
+}
+
+.dial-bar::before {
+  left: -8px;
+  border-right: 10px solid var(--end-l);
+}
+
+.dial-bar::after {
+  right: -8px;
+  border-left: 10px solid var(--end-r);
+}
+
+@container (max-width: 440px) {
+  .dial-card-face {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'l r'
+      'bar bar';
+    column-gap: 14px;
+    row-gap: 8px;
+    padding: calc(8px + 2.4%) 16px 12px;
+  }
+
+  .dial-end-left {
+    grid-area: l;
+  }
+
+  .dial-end-right {
+    grid-area: r;
+  }
+
+  .dial-end {
+    align-self: end;
+  }
+
+  .dial-bar {
+    grid-area: bar;
+    width: auto;
+    height: 6px;
+    margin: 0 10px;
+  }
+
+  .dial-bar::before,
+  .dial-bar::after {
+    border-top-width: 7px;
+    border-bottom-width: 7px;
+  }
+
+  /* The floor is a little under the wide card's: on the smallest dials (short
+     phones clamp it to 210px) each end is ~75px wide, and long single words
+     ("Underwhelming") must still fit where the browser cannot hyphenate. */
+  .dial-end-text {
+    font-size: clamp(12.5px, 4.9cqi, 20px);
+  }
+}
+
+/* The smallest dials: give the words the card's side padding too. */
+@container (max-width: 260px) {
+  .dial-card-face {
+    column-gap: 10px;
+    padding-inline: 12px;
+  }
+}
+
+/* No card dealt yet: three soft dots instead of words. */
+.dial.no-card .dial-card-face {
+  --end-l: var(--c-line-strong);
+  --end-r: var(--c-line-strong);
+}
+
+.dial.no-card .dial-end-text::before {
+  content: '···';
+  color: var(--c-ink-faint);
+  letter-spacing: 0.1em;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .dial-card-face {
+    min-height: 48px;
+  }
+}

@@ -1,0 +1,64 @@
+---
+// Pass & play setup: how many teams and rounds, each team's random name and
+// critter (the die rolls another), the rival-guess option, Start.
+// local-setup.js renders the team list and drives every control here.
+import '../../styles/local.css';
+---
+
+<section class="screen local-setup" data-screen="local-setup" aria-labelledby="local-setup-title">
+  <div class="screen-inner">
+    <div class="local-setup-head">
+      <button class="btn icon ghost small local-back" id="local-setup-back" type="button" aria-label="Back to home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      </button>
+      <h1 class="screen-title" id="local-setup-title">Pass &amp; play</h1>
+    </div>
+
+    <div class="card local-config">
+      <div class="local-config-item">
+        <span class="local-config-label" id="local-teams-label">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="8.5" r="3.5" fill="currentColor"></circle><circle cx="15.5" cy="8.5" r="3.5" fill="currentColor" opacity=".55"></circle><path d="M2 20a6.5 6.5 0 0 1 13 0z" fill="currentColor"></path><path d="M9 20a6.5 6.5 0 0 1 13 0z" fill="currentColor" opacity=".55"></path></svg>
+          Teams
+        </span>
+        <div class="stepper" id="local-teams-stepper" role="group" aria-labelledby="local-teams-label">
+          <button class="stepper-btn" data-step="-1" type="button" aria-label="Fewer teams">−</button>
+          <output class="stepper-value" aria-live="polite">2</output>
+          <button class="stepper-btn" data-step="1" type="button" aria-label="More teams">+</button>
+        </div>
+      </div>
+      <div class="local-config-item">
+        <span class="local-config-label" id="local-rounds-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"></path><path d="M20 4.5V11h-6.5"></path></svg>
+          Rounds
+        </span>
+        <div class="stepper" id="local-rounds-stepper" role="group" aria-labelledby="local-rounds-label">
+          <button class="stepper-btn" data-step="-1" type="button" aria-label="Fewer rounds">−</button>
+          <output class="stepper-value" aria-live="polite">3</output>
+          <button class="stepper-btn" data-step="1" type="button" aria-label="More rounds">+</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="local-team-list" id="local-team-list" aria-label="Teams"></ul>
+
+    <div class="local-mode">
+      <div class="local-rival" id="local-rival-row">
+        <label class="toggle">
+          <input type="checkbox" role="switch" id="local-rival" aria-describedby="local-rival-hint" />
+          <span class="toggle-track" aria-hidden="true"></span>
+          <span class="toggle-label">Rival guess</span>
+        </label>
+        <span class="local-hint" id="local-rival-hint">Next team calls left or right · +1</span>
+      </div>
+      <p class="local-coop hidden" id="local-coop">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.1A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8c0 5.5-7.5 10.1-7.5 10.1z" fill="currentColor"></path></svg>
+        <span>Co-op · up to <b id="local-coop-max">12</b> points</span>
+      </p>
+    </div>
+
+    <button class="btn primary big block local-start" id="local-start" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor"></path></svg>
+      <span class="btn-label">Start</span>
+    </button>
+  </div>
+</section>

@@ -1,0 +1,662 @@
+/* Pass & play: the setup, game and results screens (LocalSetup, LocalGame,
+   LocalResults). Built on the shared classes in base.css — buttons, cards,
+   steppers, toggles, chips, team badges and the game-screen layout — and
+   only adds what is particular to local play. Team colours arrive as --team
+   on the element (set by local*.js from TEAM_COLORS). */
+
+/* --- setup ------------------------------------------------------------------------ */
+
+.local-setup-head {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.local-setup-head .screen-title {
+  padding: 0 44px;
+}
+
+.local-back {
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  margin-top: -22px;
+  --btn-h: 44px;
+}
+
+.local-config {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px 12px;
+}
+
+.local-config-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.local-config-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--c-ink-soft);
+}
+
+.local-config-label svg {
+  width: 18px;
+  height: 18px;
+}
+
+.local-team-list {
+  list-style: none;
+  margin: 16px 0 6px;
+  padding: 0;
+}
+
+/* Each row carries its own spacing (padding, not a gap) so it can fold to
+   nothing when a team is removed. */
+.local-team {
+  padding-bottom: 10px;
+}
+
+.local-team.is-moving {
+  overflow: hidden;
+}
+
+.local-team-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 6px 6px 6px 7px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--team) 16%, var(--c-surface)), var(--c-surface) 62%);
+  box-shadow: var(--sh-1);
+}
+
+/* A long name wraps to a second line inside the row's own height. */
+.local-team-name {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  text-wrap: balance;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.local-reroll {
+  --btn-h: 44px;
+  color: var(--c-ink-soft);
+}
+
+.local-reroll svg {
+  width: 24px;
+  height: 24px;
+}
+
+.local-reroll.rolling svg {
+  animation: local-die 0.55s var(--ease-spring);
+}
+
+@keyframes local-die {
+  0% {
+    transform: rotate(0) scale(1);
+  }
+  45% {
+    transform: rotate(250deg) scale(0.78);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.local-mode {
+  display: flex;
+  justify-content: center;
+  min-height: 56px;
+  margin: 2px 0 18px;
+}
+
+.local-rival {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.local-rival .toggle {
+  min-height: 44px;
+}
+
+.local-hint {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-ink-soft);
+}
+
+.local-coop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  margin: 0;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--c-brand-soft);
+  color: var(--c-brand);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+}
+
+:root[data-theme='dark'] .local-coop {
+  color: var(--c-ink);
+}
+
+.local-coop svg {
+  width: 18px;
+  height: 18px;
+  color: var(--c-primary);
+}
+
+.local-start {
+  margin-bottom: 6px;
+}
+
+/* --- game: header strip ----------------------------------------------------------- */
+
+.local-head {
+  gap: 6px;
+}
+
+/* The score chips scroll inside the strip when they outgrow it (six teams on
+   a phone); the page itself never scrolls sideways. The padding leaves room
+   for the active chip's ring and lift; the negative margin gives it back. */
+.local-scores {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 4px 8px;
+  margin: -7px -4px -8px 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.local-scores::-webkit-scrollbar {
+  display: none;
+}
+
+/* Overflowing: fade the edge(s) that have more chips behind them (local.js
+   keeps .is-overflow / .at-start / .at-end in step with the scroll). */
+.local-scores.is-overflow {
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 20px, black calc(100% - 20px), transparent);
+  mask-image: linear-gradient(90deg, transparent, black 20px, black calc(100% - 20px), transparent);
+}
+
+.local-scores.is-overflow.at-start {
+  -webkit-mask-image: linear-gradient(90deg, black calc(100% - 20px), transparent);
+  mask-image: linear-gradient(90deg, black calc(100% - 20px), transparent);
+}
+
+.local-scores.is-overflow.at-end {
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 20px);
+  mask-image: linear-gradient(90deg, transparent, black 20px);
+}
+
+/* Right-aligned while they fit; margin-left: auto (not justify-content)
+   keeps the first chips reachable once they overflow. */
+.local-scores > :first-child {
+  margin-left: auto;
+}
+
+.local-chip {
+  flex: none;
+  gap: 5px;
+}
+
+.local-chip-score {
+  min-width: 1ch;
+  text-align: center;
+  font-weight: 600;
+}
+
+.local-scores.is-many .local-chip {
+  padding-right: 10px;
+}
+
+/* --- game: phase panel ------------------------------------------------------------- */
+
+/* One fixed height for every phase, so the dial above never shifts when the
+   panel's content changes. */
+.local-panel {
+  min-height: 184px;
+  justify-content: flex-start;
+}
+
+.local-who {
+  --team: var(--team-0);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 400px);
+  min-height: 58px;
+  padding: 6px 8px 6px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--team) 15%, var(--c-surface));
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--team) 50%, transparent),
+    var(--sh-1);
+  text-align: left;
+  transition:
+    background-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.local-who-badge {
+  position: relative;
+  display: grid;
+  flex: none;
+}
+
+.local-who-role {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c-surface);
+  color: var(--c-ink);
+  box-shadow: var(--sh-1), 0 0 0 1.5px color-mix(in srgb, var(--team) 60%, transparent);
+}
+
+.local-who-role svg {
+  width: 14px;
+  height: 14px;
+}
+
+.local-who-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  padding-right: 8px;
+}
+
+/* A long name wraps rather than losing its critter, e.g. beside the rival's
+   chip on a narrow phone. */
+.local-who-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  text-wrap: balance;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.local-who-line {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--c-ink-soft);
+}
+
+/* The handoff wants the device to move: the badge bobs until someone takes it. */
+.local-panel[data-phase='handoff'] .local-who-badge .team-badge {
+  animation: local-bob 1.8s ease-in-out infinite;
+}
+
+@keyframes local-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  30% {
+    transform: translateY(-4px) rotate(-6deg);
+  }
+  60% {
+    transform: translateY(0) rotate(5deg);
+  }
+}
+
+/* The reveal's result line is the payoff: bigger, in ink. */
+.local-panel[data-phase='reveal'] .local-who-line {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--c-ink);
+}
+
+/* The rival's call, pinned to the right of the strip at the reveal. */
+.local-who-extra {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  padding: 3px 11px 3px 3px;
+  border-radius: 999px;
+  background: var(--c-surface);
+  box-shadow: var(--sh-1), inset 0 0 0 2px color-mix(in srgb, var(--team) 55%, transparent);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.local-who-extra.is-miss {
+  color: var(--c-ink-faint);
+  box-shadow: var(--sh-1);
+}
+
+/* Left / Right share one row (the base rule's 200px basis would stack them). */
+.local-actions .btn.big.local-call {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 220px;
+  padding: 0 1.1em;
+}
+
+.local-next-badge {
+  display: inline-grid;
+  place-items: center;
+  margin-right: -0.9em;
+}
+
+.local-next-badge:empty {
+  display: none;
+}
+
+.local-next-badge .team-badge {
+  box-shadow: 0 0 0 2.5px var(--c-primary-ink);
+}
+
+.local-next-badge svg {
+  width: 24px;
+  height: 24px;
+}
+
+.local-sub {
+  justify-content: center;
+  gap: 8px;
+  margin-top: -4px;
+}
+
+.local-sub .btn {
+  min-width: 44px;
+}
+
+#local-peek .local-eye-open,
+#local-peek.is-shut .local-eye-shut {
+  display: none;
+}
+
+#local-peek.is-shut .local-eye-open {
+  display: block;
+}
+
+@media (max-width: 359px) {
+  .local-who-name {
+    font-size: 16px;
+  }
+
+  .local-who-line {
+    font-size: 14px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .local-panel {
+    min-height: 0;
+    justify-content: center;
+  }
+
+  .local-actions .btn.big.local-call {
+    flex-basis: 0;
+  }
+}
+
+/* --- results ------------------------------------------------------------------------- */
+
+.local-results .screen-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+.local-podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 18px;
+  min-height: 112px;
+  margin-top: 14px;
+}
+
+.local-podium-team {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.local-podium-team .team-badge {
+  box-shadow:
+    0 0 0 5px var(--c-surface),
+    0 14px 30px -10px var(--team);
+}
+
+.local-crown {
+  width: 46px;
+  height: auto;
+  margin-bottom: -6px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 2px 2px var(--c-line-strong));
+  animation: local-crown 2.4s ease-in-out infinite;
+}
+
+.local-podium.is-many .local-crown {
+  width: 36px;
+}
+
+.local-crown-body {
+  fill: var(--c-band-2);
+}
+
+.local-crown-band {
+  fill: var(--c-band-3);
+}
+
+.local-crown-gem {
+  fill: var(--c-primary);
+}
+
+@keyframes local-crown {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(4deg);
+  }
+}
+
+.local-results-title {
+  margin: 14px 0 4px;
+  text-wrap: balance;
+}
+
+.local-results-sub {
+  margin: 0 0 20px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--c-ink-soft);
+}
+
+.local-results-sub b {
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--c-ink);
+}
+
+.local-ranking {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+}
+
+.local-rank {
+  display: grid;
+  grid-template-columns: 30px auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 16px 9px 10px;
+  border-radius: 24px;
+  background: var(--c-surface);
+  box-shadow: var(--sh-1);
+}
+
+.local-rank.is-winner {
+  box-shadow:
+    inset 0 0 0 2.5px color-mix(in srgb, var(--team) 70%, transparent),
+    var(--sh-2);
+}
+
+.local-rank.is-pre {
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+}
+
+.local-rank.is-in {
+  transition:
+    opacity 0.3s ease,
+    transform 0.5s var(--ease-spring);
+}
+
+.local-rank-place {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--c-surface-2);
+  box-shadow: var(--sh-ring);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--c-ink-soft);
+}
+
+.local-rank.is-winner .local-rank-place {
+  background: var(--c-band-2);
+  color: var(--c-band-ink);
+}
+
+.local-rank-main {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+/* The one place every name is read: a long one ("Caffeinated Hedgehogs" on a
+   320px phone) breaks between its two words rather than losing its end. The
+   1.2 line height keeps descenders on the second line clear of the clip. */
+.local-rank-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  text-wrap: balance;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.local-rank-bar {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--c-well);
+  box-shadow: inset 0 1px 0 var(--c-line);
+  overflow: hidden;
+}
+
+.local-rank-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--team) 70%, var(--c-surface)), var(--team));
+  transition: width 1.1s var(--ease-out) calc(120ms + var(--i, 0) * 90ms);
+}
+
+.local-rank.is-in .local-rank-fill {
+  width: calc(var(--pct, 0) * 100%);
+}
+
+.local-rank-score {
+  min-width: 2ch;
+  text-align: right;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Co-op: one team, no places to hand out. */
+.local-ranking.is-coop .local-rank {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.local-ranking.is-coop .local-rank-place {
+  display: none;
+}
+
+.local-results-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 6px;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .local-podium {
+    min-height: 0;
+    margin-top: 0;
+  }
+
+  .local-podium-team .team-badge {
+    --badge-size: 56px !important;
+  }
+}

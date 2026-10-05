@@ -1,0 +1,809 @@
+/* Home screen and the how-to overlay. */
+
+/* --- home ----------------------------------------------------------------------- */
+
+.home.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 4.5vh, 40px);
+  min-height: calc(100svh - var(--topbar-h) - var(--safe-t));
+  padding-top: 0;
+  text-align: center;
+}
+
+.home-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-dial {
+  width: clamp(150px, 46vw, 236px);
+  height: auto;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 10px 16px var(--dial-shadow));
+  overflow: visible;
+}
+
+.home-title {
+  font-size: clamp(44px, 13vw, 76px);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  color: var(--c-ink);
+}
+
+.home-title span {
+  color: var(--c-primary);
+}
+
+.home-tag {
+  margin: 10px 0 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(16px, 4.2vw, 19px);
+  color: var(--c-ink-soft);
+}
+
+.home-resume {
+  max-width: 100%;
+}
+
+.resume-meta:empty {
+  display: none;
+}
+
+.resume-meta {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 14px;
+}
+
+.mode-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+  max-width: 520px;
+  padding-bottom: 6px;
+}
+
+.mode-card {
+  --accent: var(--c-primary);
+  --accent-ledge: var(--c-btn-ledge);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 20px 10px 16px;
+  border: 0;
+  border-radius: var(--r-xl);
+  background: var(--c-surface);
+  color: var(--c-ink);
+  cursor: pointer;
+  box-shadow: 0 5px 0 var(--accent-ledge), var(--sh-2);
+  transition:
+    transform 0.22s var(--ease-spring),
+    box-shadow 0.18s ease;
+}
+
+.mode-card.mode-online {
+  --accent: var(--c-brand);
+}
+
+.mode-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 0 var(--accent-ledge), var(--sh-2);
+}
+
+.mode-card:active {
+  transform: translateY(4px) scale(0.99);
+  box-shadow: 0 1px 0 var(--accent-ledge), var(--sh-1);
+  transition-duration: 0.06s;
+}
+
+.mode-card:focus-visible {
+  outline: 3px solid var(--c-focus);
+  outline-offset: 4px;
+}
+
+.mode-icon {
+  display: grid;
+  place-items: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--accent) 15%, var(--c-surface));
+  transition: transform 0.35s var(--ease-spring);
+}
+
+.mode-card:hover .mode-icon {
+  transform: rotate(-6deg) scale(1.06);
+}
+
+.mode-icon svg {
+  width: 54px;
+  height: 54px;
+  overflow: visible;
+}
+
+.mi-fill {
+  fill: var(--accent);
+}
+
+.mi-screen {
+  fill: #ffffff;
+}
+
+.mi-needle {
+  stroke: var(--c-ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.mi-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mode-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(18px, 5vw, 22px);
+  line-height: 1.1;
+}
+
+.mode-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--c-ink-soft);
+}
+
+.mode-sub svg {
+  width: 15px;
+  height: 15px;
+  opacity: 0.8;
+}
+
+/* The little dial plays one turn on a 7s loop: needle swings in, shutter
+   swings open, the 4 lights up, shutter closes, needle swings back. */
+
+.hd-rim {
+  fill: var(--dial-rim);
+}
+
+.hd-ticks {
+  stroke: var(--dial-tick);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+
+.hd-face {
+  fill: var(--dial-face);
+}
+
+.hd-b2 {
+  fill: var(--c-band-2);
+}
+
+.hd-b3 {
+  fill: var(--c-band-3);
+}
+
+.hd-b4 {
+  fill: var(--c-band-4);
+}
+
+.hd-bands path {
+  stroke: var(--dial-face);
+  stroke-width: 0.8;
+}
+
+.hd-glow {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 0;
+  opacity: 0;
+  animation: hd-glow 7s ease-out infinite;
+}
+
+.hd-shutter,
+.hd-needle {
+  transform-box: view-box;
+  transform-origin: 100px 104px;
+}
+
+.hd-shutter {
+  animation: hd-shutter 7s infinite;
+}
+
+.hd-plate {
+  fill: var(--shutter-1);
+}
+
+.hd-wave {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 4;
+  stroke-linecap: round;
+  animation: hd-wave 1.6s ease-in-out infinite;
+}
+
+.hd-wave.w2 {
+  animation-delay: 0.2s;
+}
+
+.hd-wave.w3 {
+  animation-delay: 0.4s;
+}
+
+.hd-needle {
+  fill: var(--dial-needle);
+  stroke: #ffffff;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  animation: hd-needle 7s infinite;
+}
+
+.hd-cap {
+  fill: var(--dial-needle);
+  stroke: #ffffff;
+  stroke-width: 1.6;
+}
+
+.hd-pop {
+  transform-box: view-box;
+  transform-origin: 70px 64px;
+  animation: hd-pop 7s infinite;
+}
+
+.hd-pop rect {
+  fill: var(--c-band-4);
+  stroke: #ffffff;
+  stroke-width: 1.6;
+}
+
+.hd-pop text {
+  fill: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+@keyframes hd-needle {
+  0%,
+  6% {
+    transform: rotate(-55deg);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.3, 1);
+  }
+  16% {
+    transform: rotate(31deg);
+    animation-timing-function: ease-in-out;
+  }
+  20% {
+    transform: rotate(17deg);
+    animation-timing-function: ease-in-out;
+  }
+  23%,
+  78% {
+    transform: rotate(21deg);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.3, 1);
+  }
+  88% {
+    transform: rotate(-62deg);
+    animation-timing-function: ease-in-out;
+  }
+  92% {
+    transform: rotate(-51deg);
+    animation-timing-function: ease-in-out;
+  }
+  95%,
+  100% {
+    transform: rotate(-55deg);
+  }
+}
+
+@keyframes hd-shutter {
+  0%,
+  27% {
+    transform: rotate(0deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.6, 1);
+  }
+  35% {
+    transform: rotate(189deg);
+    animation-timing-function: ease-in-out;
+  }
+  39%,
+  66% {
+    transform: rotate(180deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.6, 1);
+  }
+  73% {
+    transform: rotate(-8deg);
+    animation-timing-function: ease-in-out;
+  }
+  77%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes hd-glow {
+  0%,
+  39% {
+    stroke-width: 1;
+    opacity: 0;
+  }
+  40% {
+    stroke-width: 1;
+    opacity: 0.95;
+  }
+  50% {
+    stroke-width: 12;
+    opacity: 0;
+  }
+  51% {
+    stroke-width: 1;
+    opacity: 0.9;
+  }
+  61%,
+  100% {
+    stroke-width: 12;
+    opacity: 0;
+  }
+}
+
+@keyframes hd-pop {
+  0%,
+  39% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  44% {
+    transform: scale(1.2) translateY(-3px);
+    opacity: 1;
+  }
+  48%,
+  62% {
+    transform: scale(1) translateY(-4px);
+    opacity: 1;
+  }
+  66%,
+  100% {
+    transform: scale(0.6) translateY(-6px);
+    opacity: 0;
+  }
+}
+
+@keyframes hd-wave {
+  0%,
+  100% {
+    stroke: rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    stroke: rgba(255, 255, 255, 0.34);
+  }
+}
+
+/* Reduced motion: no loop, just its payoff frame — shutter tucked away, the
+   needle in the 4 and the +4 up. (base.css shortens every animation to one
+   1ms run, after which each part would fall back to its resting style: a
+   closed shutter with the +4 floating over it.) */
+@media (prefers-reduced-motion: reduce) {
+  .hd-shutter,
+  .hd-needle,
+  .hd-pop,
+  .hd-glow,
+  .hd-wave {
+    animation: none !important;
+  }
+
+  .hd-shutter {
+    transform: rotate(180deg);
+  }
+
+  .hd-needle {
+    transform: rotate(21deg);
+  }
+
+  .hd-pop {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 340px) {
+  .mode-cards {
+    gap: 10px;
+  }
+
+  .mode-icon {
+    width: 66px;
+    height: 66px;
+    border-radius: 22px;
+  }
+
+  .mode-icon svg {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .home.active {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 14px 36px;
+  }
+
+  .home-dial {
+    width: 150px;
+  }
+
+  .home-title {
+    font-size: 46px;
+  }
+
+  .mode-cards {
+    max-width: 380px;
+  }
+
+  .mode-card {
+    padding: 14px 8px 12px;
+  }
+
+  .mode-icon {
+    width: 62px;
+    height: 62px;
+  }
+
+  .mode-icon svg {
+    width: 42px;
+    height: 42px;
+  }
+
+  .home-resume {
+    order: 3;
+    flex-basis: 100%;
+    max-width: 380px;
+  }
+}
+
+/* --- how to play ------------------------------------------------------------------ */
+
+.howto-modal {
+  max-width: 560px;
+  padding-top: 20px;
+}
+
+.howto-modal .modal-actions {
+  margin-top: 16px;
+}
+
+.howto-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.howto-steps li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px 10px;
+  border-radius: var(--r-lg);
+  background: var(--c-surface-2);
+  counter-increment: step;
+}
+
+.howto-steps li::before {
+  content: counter(step);
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c-ink);
+  color: var(--c-surface);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.overlay.show .howto-steps li {
+  animation: step-in 0.5s var(--ease-spring) both;
+  animation-delay: calc(90ms + var(--i) * 80ms);
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.9);
+  }
+}
+
+.ht-art {
+  width: 100%;
+  max-width: 98px;
+  height: auto;
+  overflow: visible;
+}
+
+.ht-cap {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+.ht-motion {
+  fill: none;
+  stroke: var(--c-ink-faint);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.ht-card-back {
+  fill: var(--c-brand);
+}
+
+.ht-card {
+  fill: var(--c-surface);
+  stroke: var(--c-line-strong);
+  stroke-width: 1.2;
+}
+
+.ht-end-l,
+.ht-bar-l {
+  fill: var(--team-1);
+}
+
+.ht-end-r,
+.ht-bar-r {
+  fill: var(--c-primary);
+}
+
+.ht-word {
+  fill: var(--c-ink-faint);
+}
+
+.ht-rim {
+  fill: var(--dial-rim);
+}
+
+.ht-face {
+  fill: var(--dial-face);
+}
+
+.ht-b2 {
+  fill: var(--c-band-2);
+}
+
+.ht-b3 {
+  fill: var(--c-band-3);
+}
+
+.ht-b4 {
+  fill: var(--c-band-4);
+}
+
+.ht-cap-dot {
+  fill: var(--dial-needle);
+}
+
+.ht-eye-white {
+  fill: #ffffff;
+  stroke: var(--c-ink);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+
+.ht-pupil {
+  fill: var(--c-ink);
+}
+
+.ht-glint {
+  fill: #ffffff;
+}
+
+.ht-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ht-blink 3.6s ease-in-out infinite;
+}
+
+@keyframes ht-blink {
+  0%,
+  44%,
+  52%,
+  100% {
+    transform: scaleY(1);
+  }
+  48% {
+    transform: scaleY(0.1);
+  }
+}
+
+.ht-bubble {
+  fill: var(--c-surface);
+  stroke: var(--c-ink);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+
+.ht-clue {
+  fill: var(--c-ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.ht-shutter {
+  fill: var(--shutter-1);
+}
+
+.ht-arrow,
+.ht-arrow-head {
+  fill: none;
+  stroke: var(--c-ink-soft);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: none;
+}
+
+.ht-arrow {
+  stroke-dasharray: 0.1 7;
+}
+
+.ht-needle {
+  fill: var(--dial-needle);
+  stroke: #ffffff;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  transform-box: view-box;
+  transform-origin: 50px 64px;
+  animation: ht-sway 3.2s ease-in-out infinite;
+}
+
+@keyframes ht-sway {
+  0%,
+  100% {
+    transform: rotate(-58deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+.howto-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.ht-legend {
+  width: min(196px, 62%);
+  height: auto;
+}
+
+.ht-legend path {
+  stroke: var(--c-surface);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.ht-num {
+  fill: var(--c-band-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.ht-num.p4 {
+  fill: #ffffff;
+}
+
+.ht-score-cap {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--c-ink-soft);
+}
+
+.howto-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--c-ink-soft);
+}
+
+.howto-modes li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.howto-modes b {
+  color: var(--c-ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.ht-mode-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--c-primary-soft);
+  color: var(--c-primary);
+}
+
+.ht-mode-icon.online {
+  background: var(--c-brand-soft);
+  color: var(--c-brand);
+}
+
+.ht-mode-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (min-width: 600px) {
+  .howto-steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 360px) {
+  .howto-modal {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .howto-steps {
+    gap: 8px;
+  }
+
+  .ht-cap {
+    font-size: 14px;
+  }
+}

@@ -1,0 +1,79 @@
+---
+// The online lobby: you (avatar, sign out, a four-number stats strip), who
+// else is online with a Challenge button each (plus how many rounds a
+// challenge asks for), and your recent games, each one a link back into its
+// room. Rendered by src/scripts/lobby.js.
+import '../../styles/online.css';
+---
+
+<section class="screen lobby-screen" data-screen="lobby" aria-labelledby="lobby-title">
+  <div class="screen-inner lobby">
+    <div class="card lobby-me">
+      <div class="lobby-me-row">
+        <span class="lobby-me-avatar" id="lobby-avatar"></span>
+        <h1 class="lobby-me-name" id="lobby-title">Lobby</h1>
+        <button class="btn ghost small lobby-signout" id="lobby-signout" type="button" aria-label="Sign out" title="Sign out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14M10 16.5L5.5 12 10 7.5M5.5 12H15"></path></svg>
+          <span class="btn-label">Sign out</span>
+        </button>
+      </div>
+      <dl class="lobby-stats">
+        <div class="lobby-stat">
+          <dt>Games</dt>
+          <dd id="lobby-stat-games">0</dd>
+        </div>
+        <div class="lobby-stat">
+          <dt>Best</dt>
+          <dd id="lobby-stat-best">–</dd>
+        </div>
+        <div class="lobby-stat">
+          <dt>Per round</dt>
+          <dd id="lobby-stat-avg">–</dd>
+        </div>
+        <div class="lobby-stat is-bulls">
+          <dt>Bullseyes</dt>
+          <dd id="lobby-stat-bulls">0</dd>
+        </div>
+      </dl>
+    </div>
+
+    <section class="card lobby-section" aria-labelledby="lobby-players-title">
+      <div class="lobby-head">
+        <h2 class="lobby-h" id="lobby-players-title">
+          <span class="lobby-live-dot" aria-hidden="true"></span>
+          Online
+          <span class="lobby-count" id="lobby-count"></span>
+        </h2>
+        <div class="lobby-rounds">
+          <span class="lobby-rounds-label" id="lobby-rounds-label">Rounds</span>
+          <div class="stepper small-stepper" id="lobby-rounds" role="group" aria-labelledby="lobby-rounds-label">
+            <button class="stepper-btn" type="button" data-step="-1" aria-label="Fewer rounds">−</button>
+            <output class="stepper-value" aria-live="polite">5</output>
+            <button class="stepper-btn" type="button" data-step="1" aria-label="More rounds">+</button>
+          </div>
+        </div>
+      </div>
+      <ul class="lobby-players" id="lobby-players"></ul>
+      <div class="lobby-empty" id="lobby-players-empty">
+        <svg class="lobby-empty-art" viewBox="0 0 120 64" aria-hidden="true">
+          <path class="le-wave w3" d="M20 52a40 40 0 0 1 80 0"></path>
+          <path class="le-wave w2" d="M34 52a26 26 0 0 1 52 0"></path>
+          <path class="le-wave w1" d="M47 52a13 13 0 0 1 26 0"></path>
+          <circle class="le-dot" cx="60" cy="52" r="5"></circle>
+        </svg>
+        <p class="lobby-empty-title">Nobody else is here yet</p>
+        <p class="lobby-empty-sub">Challenges pop up wherever you are.</p>
+      </div>
+    </section>
+
+    <section class="card lobby-section" aria-labelledby="lobby-recent-title">
+      <div class="lobby-head">
+        <h2 class="lobby-h" id="lobby-recent-title">Recent games</h2>
+      </div>
+      <ul class="lobby-recent" id="lobby-recent"></ul>
+      <div class="lobby-empty small" id="lobby-recent-empty">
+        <p class="lobby-empty-sub">Your games will show up here.</p>
+      </div>
+    </section>
+  </div>
+</section>

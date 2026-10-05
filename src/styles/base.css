@@ -1,0 +1,1427 @@
+/* Design tokens, page chrome and the shared component classes every screen
+   is built from: buttons, cards, steppers, toggles, chips, team badges,
+   fields, overlays, the toast, and the game-screen layout. Screen-specific
+   styles live in their own files (dial.css, home.css, local.css, online.css). */
+
+/* --- tokens ------------------------------------------------------------------
+
+   Every colour in the app is a token, declared twice: once for the light
+   theme, once in the dark block below. Both blocks carry the same
+   declarations in the same order so the two themes diff line by line. The
+   theme is stamped on <html data-theme> before first paint (Layout.astro).
+   Team colours mirror TEAM_COLORS in src/scripts/teams.js and never change
+   with the theme — a team keeps its identity day and night. */
+
+:root {
+  color-scheme: light;
+
+  /* surfaces, from the page up to a raised card */
+  --c-page: #f5f1ea;
+  --c-page-glow: #fdfbf6;
+  --c-surface: #ffffff;
+  --c-surface-2: #f8f4ed; /* a quieter panel inside a card */
+  --c-well: #f1ece3; /* recessed — the inside of a text field */
+
+  /* ink */
+  --c-ink: #1d2140;
+  --c-ink-soft: #6b6f8a;
+  --c-ink-faint: #a4a6b8;
+  --c-line: rgba(29, 33, 64, 0.09);
+  --c-line-strong: rgba(29, 33, 64, 0.18);
+
+  /* primary (coral) — the one button that moves the game on */
+  --c-primary: #ff5a4e;
+  --c-primary-hover: #ff6a5f;
+  --c-primary-ledge: #d13d32;
+  --c-primary-ink: #ffffff;
+  --c-primary-soft: rgba(255, 90, 78, 0.14);
+
+  /* brand (deep indigo-blue) — the shutter, secondary emphasis */
+  --c-brand: #3446c8;
+  --c-brand-2: #2433a0;
+  --c-brand-ledge: #1b2680;
+  --c-brand-ink: #ffffff;
+  --c-brand-soft: rgba(52, 70, 200, 0.12);
+
+  /* secondary buttons and steppers */
+  --c-btn: #ffffff;
+  --c-btn-hover: #fffdf9;
+  --c-btn-ink: #1d2140;
+  --c-btn-ledge: #ddd5c6;
+
+  /* status */
+  --c-ok: #22a565;
+  --c-ok-soft: rgba(34, 165, 101, 0.2);
+  --c-danger: #e5484d;
+  --c-danger-ledge: #b3313a;
+  --c-danger-soft: rgba(229, 72, 77, 0.14);
+  --c-focus: rgba(52, 70, 200, 0.5);
+
+  /* scoring bands: 2 sunflower, 3 tangerine, 4 the boldest */
+  --c-band-2: #ffc93c;
+  --c-band-3: #ff8f3a;
+  --c-band-4: #1fa5e0;
+  --c-band-ink: #3b2600; /* numbers on the 2 and 3 bands */
+  /* band and coral colours as text on the page (fills keep the bright ones) */
+  --c-band-3-text: #a94c00;
+  --c-band-4-text: #0b6fa3;
+  --c-primary-text: #c0332a;
+
+  /* teams (= TEAM_COLORS) */
+  --team-0: #ff6b5b;
+  --team-1: #2ec4b6;
+  --team-2: #8b6cff;
+  --team-3: #ffb703;
+  --team-4: #4cc26b;
+  --team-5: #3fa7ff;
+
+  /* scrims and the toast (inverted against the page, both ways round) */
+  --c-scrim: rgba(18, 21, 44, 0.46);
+  --c-toast-bg: #1d2140;
+  --c-toast-ink: #ffffff;
+
+  /* the dial — a physical object, so it has its own little palette */
+  --dial-rim: #222850;
+  --dial-rim-hi: rgba(255, 255, 255, 0.13);
+  --dial-tick: #f6edda;
+  --dial-face: #fffaf0;
+  --dial-groove: rgba(29, 33, 64, 0.05);
+  --dial-dot: rgba(29, 33, 64, 0.17);
+  --dial-shade: rgba(29, 33, 64, 0.17);
+  --dial-needle: #ff4d41;
+  --dial-needle-edge: #ffffff;
+  --dial-needle-shadow: rgba(14, 16, 40, 0.38);
+  --dial-knob-edge: #ffffff;
+  --dial-shadow: rgba(29, 33, 64, 0.3);
+  --shutter-1: #4053d8;
+  --shutter-2: #2433a0;
+  --shutter-line: rgba(255, 255, 255, 0.12);
+  --shutter-lip: rgba(255, 255, 255, 0.24);
+  --shutter-sheen: #ffffff;
+
+  /* depth */
+  --sh-1: 0 1px 2px rgba(29, 33, 64, 0.06), 0 3px 10px rgba(29, 33, 64, 0.06);
+  --sh-2: 0 2px 4px rgba(29, 33, 64, 0.05), 0 10px 28px rgba(29, 33, 64, 0.09);
+  --sh-3: 0 22px 60px rgba(20, 22, 50, 0.26);
+  --sh-ring: 0 0 0 1px transparent; /* a hairline that only exists by night */
+
+  --o-disabled: 0.5;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --c-page: #0f1222;
+  --c-page-glow: #1a1f3d;
+  --c-surface: #1a1e35;
+  --c-surface-2: #212641;
+  --c-well: #12152a;
+
+  --c-ink: #f1efe9;
+  --c-ink-soft: #a3a7c2;
+  --c-ink-faint: #666b8e;
+  --c-line: rgba(241, 239, 233, 0.08);
+  --c-line-strong: rgba(241, 239, 233, 0.16);
+
+  --c-primary: #ff5a4e;
+  --c-primary-hover: #ff6e63;
+  --c-primary-ledge: #a8322a;
+  --c-primary-ink: #ffffff;
+  --c-primary-soft: rgba(255, 90, 78, 0.2);
+
+  --c-brand: #5a6cf2;
+  --c-brand-2: #3446c8;
+  --c-brand-ledge: #222f8c;
+  --c-brand-ink: #ffffff;
+  --c-brand-soft: rgba(110, 128, 255, 0.2);
+
+  --c-btn: #2a2f50;
+  --c-btn-hover: #31375c;
+  --c-btn-ink: #f1efe9;
+  --c-btn-ledge: #0a0c19;
+
+  --c-ok: #43cc86;
+  --c-ok-soft: rgba(67, 204, 134, 0.24);
+  --c-danger: #f05a5f;
+  --c-danger-ledge: #9c2a31;
+  --c-danger-soft: rgba(240, 90, 95, 0.2);
+  --c-focus: rgba(140, 155, 255, 0.75);
+
+  --c-band-2: #ffc93c;
+  --c-band-3: #ff8f3a;
+  --c-band-4: #25b0ee;
+  --c-band-ink: #3b2600;
+  --c-band-3-text: #ff8f3a;
+  --c-band-4-text: #25b0ee;
+  --c-primary-text: #ff5a4e;
+
+  --team-0: #ff6b5b;
+  --team-1: #2ec4b6;
+  --team-2: #8b6cff;
+  --team-3: #ffb703;
+  --team-4: #4cc26b;
+  --team-5: #3fa7ff;
+
+  --c-scrim: rgba(4, 5, 14, 0.7);
+  --c-toast-bg: #f1efe9;
+  --c-toast-ink: #1d2140;
+
+  --dial-rim: #2b3163;
+  --dial-rim-hi: rgba(255, 255, 255, 0.16);
+  --dial-tick: #d9ddff;
+  --dial-face: #f4ecdc;
+  --dial-groove: rgba(29, 33, 64, 0.05);
+  --dial-dot: rgba(29, 33, 64, 0.2);
+  --dial-shade: rgba(16, 18, 40, 0.3);
+  --dial-needle: #ff4d41;
+  --dial-needle-edge: #ffffff;
+  --dial-needle-shadow: rgba(0, 0, 0, 0.5);
+  --dial-knob-edge: #ffffff;
+  --dial-shadow: rgba(0, 0, 0, 0.6);
+  --shutter-1: #4a5ee6;
+  --shutter-2: #2a39b0;
+  --shutter-line: rgba(255, 255, 255, 0.12);
+  --shutter-lip: rgba(255, 255, 255, 0.24);
+  --shutter-sheen: #ffffff;
+
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(241, 239, 233, 0.06);
+  --sh-2: 0 4px 18px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(241, 239, 233, 0.07);
+  --sh-3: 0 24px 70px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(241, 239, 233, 0.1);
+  --sh-ring: 0 0 0 1px rgba(241, 239, 233, 0.08);
+
+  --o-disabled: 0.5;
+}
+
+/* Non-colour tokens: one set for both themes. */
+:root {
+  --font-display: 'Fredoka', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --font-body: 'Nunito', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 26px;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.25, 1);
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.35);
+  --gutter: 16px;
+  --topbar-h: 60px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+/* --- reset & page ---------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--c-page);
+}
+
+html.has-overlay {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100svh;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--c-ink);
+  background:
+    radial-gradient(1100px 520px at 50% -180px, var(--c-page-glow), transparent 72%),
+    var(--c-page);
+  background-attachment: fixed;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 0;
+}
+
+h1:focus,
+h2:focus {
+  outline: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+svg {
+  flex: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--c-focus);
+  outline-offset: 2px;
+}
+
+/* A brief cross-fade of every colour when the theme flips (ui.js). */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease,
+    fill 0.35s ease,
+    stroke 0.35s ease,
+    box-shadow 0.35s ease !important;
+}
+
+/* --- app shell ---------------------------------------------------------------------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 max(var(--gutter), env(safe-area-inset-right)) 0 max(var(--gutter), env(safe-area-inset-left));
+}
+
+.screens {
+  position: relative;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  display: none;
+  padding: 6px 0 calc(20px + var(--safe-b));
+}
+
+.screen.active {
+  display: block;
+  flex: 1 0 auto;
+}
+
+/* The screen on its way out (router.js) leaves the flow so the incoming one
+   lays out in place underneath it. */
+.screen.leaving {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+/* A ?session link: nothing shows until online.js picks a screen — a small
+   spinning loader holds the space instead of a flash of home. */
+html.joining .screens:not(:has(> .screen.active))::after {
+  content: '';
+  position: absolute;
+  top: 34vh;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  border-radius: 50%;
+  border: 4px solid var(--c-line-strong);
+  border-top-color: var(--c-primary);
+  animation: spin 0.8s linear infinite;
+}
+
+/* Centred content column for setup / lobby / results screens. */
+.screen-inner {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.screen-title {
+  font-size: clamp(24px, 6.4vw, 32px);
+  text-align: center;
+  margin: 6px 0 18px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.muted {
+  color: var(--c-ink-soft);
+}
+
+/* --- top bar -------------------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: calc(var(--topbar-h) + var(--safe-t));
+  padding-top: var(--safe-t);
+  position: relative;
+  z-index: 20;
+}
+
+/* The wordmark never shrinks (it would slide under the name pill): on a narrow
+   phone the signed-in name gives way instead, then the wordmark collapses to
+   its glyph (media queries below). */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 6px 8px 6px 2px;
+  margin-left: -2px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  cursor: pointer;
+  color: var(--c-ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 23px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.logo-glyph {
+  width: 32px;
+  height: 32px;
+  transition: transform 0.4s var(--ease-spring);
+}
+
+.logo:hover .logo-glyph {
+  transform: rotate(-10deg) scale(1.06);
+}
+
+.logo:active .logo-glyph {
+  transform: scale(0.92);
+}
+
+.logo-word b {
+  font-weight: 600;
+  color: var(--c-primary);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.topbar .btn.icon {
+  --btn-h: 40px;
+}
+
+/* Shrinks to what the logo and the icon buttons leave; the name ellipsizes. */
+.online-btn {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 46vw;
+  margin-right: 4px;
+  padding: 0 0.95em;
+}
+
+.online-btn #online-name {
+  max-width: 30vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.online-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--c-ok);
+  box-shadow: 0 0 0 3px var(--c-ok-soft);
+  flex: none;
+}
+
+/* The theme button shows where a tap takes you: a moon by day, a sun by night. */
+.theme-sun {
+  display: none;
+}
+
+:root[data-theme='dark'] .theme-sun {
+  display: block;
+}
+
+:root[data-theme='dark'] .theme-moon {
+  display: none;
+}
+
+@media (max-width: 400px) {
+  .logo {
+    font-size: 20px;
+    gap: 6px;
+  }
+
+  .topbar-actions {
+    gap: 0;
+  }
+
+  .logo-glyph {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Signed in (or the saved name shown while the session is checked), a phone
+   gives the name the wordmark's room. */
+@media (max-width: 459px) {
+  .topbar:has(#online-name:not(.hidden)) .logo-word {
+    display: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .logo-word {
+    display: none;
+  }
+}
+
+/* --- buttons ---------------------------------------------------------------------------
+   .btn                 pill, chunky, a 4px "ledge" below that compresses on press
+   .btn.primary         coral — the one action that moves the game on
+   .btn.brand           indigo — strong secondary
+   .btn.ghost           no fill, no ledge — tertiary / back
+   .btn.danger          red (armConfirm adds it while armed)
+   .btn.small / .big    36px / 58px tall (default 48px)
+   .btn.icon            square-round, icon only (give it an aria-label)
+   .btn.block           full width
+   Put an <svg> before the text for an icon; wrap the text in .btn-label if the
+   button is used with armConfirm and must keep its icon. Leave ~6px below a
+   button for its ledge. */
+
+.btn {
+  --btn-bg: var(--c-btn);
+  --btn-bg-hover: var(--c-btn-hover);
+  --btn-ink: var(--c-btn-ink);
+  --btn-ledge: var(--c-btn-ledge);
+  --btn-h: 48px;
+  --ledge: 4px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-height: var(--btn-h);
+  min-width: 0;
+  padding: 0 1.35em;
+  border: 0;
+  border-radius: 999px;
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  box-shadow: 0 var(--ledge) 0 var(--btn-ledge), var(--sh-ring);
+  transform: translateY(0);
+  transition:
+    transform 0.14s var(--ease-out),
+    box-shadow 0.14s var(--ease-out),
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--btn-bg-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 calc(var(--ledge) + 1px) 0 var(--btn-ledge), var(--sh-ring);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(calc(var(--ledge) - 1px));
+  box-shadow: 0 1px 0 var(--btn-ledge), var(--sh-ring);
+  transition-duration: 0.05s;
+}
+
+.btn:disabled {
+  opacity: var(--o-disabled);
+  cursor: not-allowed;
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--c-focus);
+  outline-offset: 3px;
+}
+
+.btn svg {
+  width: 1.3em;
+  height: 1.3em;
+}
+
+.btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn.primary {
+  --btn-bg: var(--c-primary);
+  --btn-bg-hover: var(--c-primary-hover);
+  --btn-ink: var(--c-primary-ink);
+  --btn-ledge: var(--c-primary-ledge);
+}
+
+.btn.brand {
+  --btn-bg: var(--c-brand);
+  --btn-bg-hover: var(--c-brand);
+  --btn-ink: var(--c-brand-ink);
+  --btn-ledge: var(--c-brand-ledge);
+}
+
+.btn.ghost {
+  --btn-bg: transparent;
+  --btn-bg-hover: var(--c-line);
+  --btn-ink: var(--c-ink-soft);
+  box-shadow: none;
+}
+
+.btn.ghost:hover:not(:disabled),
+.btn.ghost:active:not(:disabled) {
+  box-shadow: none;
+  color: var(--c-ink);
+  transform: none;
+}
+
+.btn.ghost:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* After .ghost on purpose: a ghost button armed by armConfirm turns red too. */
+.btn.danger,
+.btn.ghost.danger,
+.btn.ghost.danger:hover:not(:disabled) {
+  --btn-bg: var(--c-danger);
+  --btn-bg-hover: var(--c-danger);
+  --btn-ink: var(--c-primary-ink);
+  --btn-ledge: var(--c-danger-ledge);
+  color: var(--btn-ink);
+  box-shadow: 0 var(--ledge) 0 var(--btn-ledge), var(--sh-ring);
+}
+
+.btn.small {
+  --btn-h: 38px;
+  --ledge: 3px;
+  padding: 0 1em;
+  font-size: 15px;
+}
+
+.btn.big {
+  --btn-h: 58px;
+  --ledge: 5px;
+  padding: 0 2em;
+  font-size: 20px;
+}
+
+.btn.icon {
+  width: var(--btn-h);
+  padding: 0;
+  flex: none;
+}
+
+.btn.icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.btn.small.icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.btn.block {
+  display: flex;
+  width: 100%;
+}
+
+/* armConfirm: a bar that drains while the button waits for its second tap. */
+.btn.armed::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 7px;
+  height: 3px;
+  border-radius: 3px;
+  background: currentColor;
+  opacity: 0.55;
+  transform-origin: left center;
+  animation: arm-drain var(--arm-ms, 3000ms) linear forwards;
+}
+
+.btn.small.armed::after {
+  bottom: 4px;
+  height: 2px;
+}
+
+@keyframes arm-drain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* A button waiting on the network: its contents hide and a spinner turns. */
+.btn.is-busy {
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn.is-busy > * {
+  visibility: hidden;
+}
+
+.btn.is-busy::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  border: 3px solid var(--btn-ink);
+  border-right-color: transparent;
+  opacity: 0.85;
+  animation: spin 0.7s linear infinite;
+}
+
+.btn.is-busy:disabled {
+  opacity: 1;
+}
+
+/* --- cards ----------------------------------------------------------------------------- */
+
+.card {
+  background: var(--c-surface);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-2);
+  padding: 18px;
+}
+
+.card.flat {
+  box-shadow: var(--sh-ring);
+  background: var(--c-surface-2);
+}
+
+/* --- stepper: − value + -----------------------------------------------------------------
+   <div class="stepper"><button class="stepper-btn" data-step="-1" aria-label="Fewer">−</button>
+     <output class="stepper-value">2</output>
+     <button class="stepper-btn" data-step="1" aria-label="More">+</button></div>
+   Drive it with bindStepper() from ui.js. */
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--c-surface-2);
+  box-shadow: inset 0 0 0 1px var(--c-line);
+}
+
+.stepper-btn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0 0 2px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--c-btn);
+  color: var(--c-ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--c-btn-ledge), var(--sh-ring);
+  transition: transform 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out), opacity 0.15s;
+}
+
+.stepper-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--c-btn-ledge), var(--sh-ring);
+}
+
+.stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.stepper-value {
+  display: inline-block;
+  min-width: 2.4ch;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- toggle (switch) -------------------------------------------------------------------
+   <label class="toggle"><input type="checkbox" role="switch" />
+     <span class="toggle-track" aria-hidden="true"></span>
+     <span class="toggle-label">Rival guess</span></label> */
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 17px;
+  position: relative;
+}
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.toggle-track {
+  position: relative;
+  width: 52px;
+  height: 32px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--c-line-strong);
+  transition: background-color 0.2s ease;
+}
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.32s var(--ease-spring), width 0.2s ease;
+}
+
+.toggle:active .toggle-track::after {
+  width: 31px;
+}
+
+.toggle input:checked + .toggle-track {
+  background: var(--c-ok);
+}
+
+.toggle input:checked + .toggle-track::after {
+  transform: translateX(20px);
+}
+
+.toggle:active input:checked + .toggle-track::after {
+  transform: translateX(15px);
+}
+
+.toggle input:focus-visible + .toggle-track {
+  outline: 3px solid var(--c-focus);
+  outline-offset: 2px;
+}
+
+.toggle input:disabled + .toggle-track {
+  opacity: var(--o-disabled);
+}
+
+/* --- chip --------------------------------------------------------------------------------
+   A small pill: <span class="chip">[team badge] <b>12</b></span>.
+   .active rings it in --chip-accent (default primary) and lifts it. */
+
+.chip {
+  --chip-accent: var(--c-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 3px 12px 3px 3px;
+  border-radius: 999px;
+  background: var(--c-surface);
+  box-shadow: var(--sh-1);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition: transform 0.25s var(--ease-spring), box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.chip:not(:has(.team-badge, svg)) {
+  padding-left: 12px;
+}
+
+.chip.active {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 2.5px var(--chip-accent), 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.chip.dim {
+  opacity: 0.55;
+}
+
+/* --- team badge ---------------------------------------------------------------------------
+   teamBadgeHtml() in teams.js: a disc of --team with the critter ~78% inset. */
+
+.team-badge {
+  --team: var(--team-0);
+  --badge-size: 48px;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--badge-size);
+  height: var(--badge-size);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--team) 72%, #ffffff), var(--team) 62%);
+  box-shadow:
+    inset 0 calc(var(--badge-size) * -0.06) 0 rgba(0, 0, 0, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.team-badge > svg {
+  display: block;
+  width: 78%;
+  height: 78%;
+}
+
+/* --- fields ---------------------------------------------------------------------------------
+   <label class="field"><span class="field-label">Name</span><input /></label>
+   Inputs are 17px so iOS never zooms on focus. */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  min-width: 0;
+}
+
+.field-label {
+  padding-left: 6px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--c-ink-soft);
+}
+
+.field input,
+.field textarea,
+.field select,
+.field-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 16px;
+  border: 2px solid transparent;
+  border-radius: var(--r-md);
+  background: var(--c-well);
+  color: var(--c-ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 17px;
+  outline: none;
+  box-shadow: inset 0 2px 0 var(--c-line);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.field textarea {
+  resize: none;
+  line-height: 1.35;
+}
+
+.field input::placeholder,
+.field textarea::placeholder,
+.field-input::placeholder {
+  color: var(--c-ink-faint);
+  font-weight: 600;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus,
+.field-input:focus {
+  border-color: var(--c-brand);
+  background: var(--c-surface);
+  box-shadow: 0 0 0 4px var(--c-brand-soft);
+}
+
+.field.invalid input,
+.field.invalid textarea,
+.field-input.invalid {
+  border-color: var(--c-danger);
+  box-shadow: 0 0 0 4px var(--c-danger-soft);
+}
+
+.field-hint,
+.field-error {
+  padding-left: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-ink-soft);
+}
+
+.field-error {
+  color: var(--c-danger);
+}
+
+/* --- overlays -----------------------------------------------------------------------------
+   <div class="overlay" id="…"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="…">
+     <button class="btn icon ghost small modal-close" data-close aria-label="Close">…</button>
+     <h2 class="modal-title">…</h2> … <div class="modal-actions">…</div></div></div>
+   openOverlay / closeOverlay in ui.js; data-sticky stops Escape / backdrop closing it. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, var(--safe-t)) 16px max(16px, var(--safe-b));
+  background: var(--c-scrim);
+  overscroll-behavior: contain;
+}
+
+.overlay.show {
+  display: flex;
+  animation: scrim-in 0.22s ease-out;
+}
+
+.overlay.show .modal {
+  animation: modal-in 0.42s var(--ease-spring);
+}
+
+.overlay.closing {
+  animation: scrim-out 0.17s ease-in forwards;
+}
+
+.overlay.closing .modal {
+  animation: modal-out 0.17s ease-in forwards;
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 26px 22px 22px;
+  border-radius: 28px;
+  background: var(--c-surface);
+  color: var(--c-ink);
+  box-shadow: var(--sh-3);
+  text-align: center;
+  outline: none;
+}
+
+.modal-title {
+  margin: 0 0 6px;
+  font-size: 26px;
+}
+
+.modal-sub {
+  margin: 0 0 16px;
+  color: var(--c-ink-soft);
+  font-weight: 600;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes scrim-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+}
+
+@keyframes modal-out {
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+/* --- toast ---------------------------------------------------------------------------------- */
+
+.toast {
+  --toast-from: 24px; /* where it slides in from */
+  position: fixed;
+  left: 50%;
+  bottom: calc(22px + var(--safe-b));
+  z-index: 350;
+  /* Sized to its text: a shrink-to-fit box at left: 50% would otherwise be
+     capped at the half of the viewport to its right and wrap early. */
+  width: max-content;
+  max-width: min(92vw, 460px);
+  padding: 12px 22px;
+  border-radius: 24px; /* a pill on one line, a soft card if it wraps */
+  background: var(--c-toast-bg);
+  color: var(--c-toast-ink);
+  box-shadow: var(--sh-3);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+  text-align: center;
+  text-wrap: balance;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, var(--toast-from)) scale(0.94);
+  transition:
+    opacity 0.2s ease,
+    transform 0.36s var(--ease-spring);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+/* In a game the main button sits at the bottom of the screen: drop toasts in
+   from the top instead, over the top bar's chrome rather than the play. */
+body[data-screen$='-game'] .toast {
+  --toast-from: -24px;
+  top: calc(var(--safe-t) + max(4px, (var(--topbar-h) - 48px) / 2));
+  bottom: auto;
+}
+
+/* --- fx (fx.js) ---------------------------------------------------------------------------- */
+
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fx-confetti {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.fly-chip {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 6px 14px 7px;
+  border-radius: 999px;
+  background: var(--chip, var(--c-primary));
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22), inset 0 -3px 0 rgba(0, 0, 0, 0.14);
+  will-change: transform;
+}
+
+.is-counting {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- game screen layout ----------------------------------------------------------------------
+
+   Every game screen (local and online) is three stacked parts:
+
+     <section class="screen game-screen" data-screen="…">
+       <div class="game-head">…</div>     header strip: round "2 / 3", scores, exit
+       <div class="game-stage"><Dial id="…" /></div>
+       <div class="game-panel">           the phase panel
+         <p class="panel-prompt">…</p>    one short line (optional)
+         <div class="panel-actions">      the buttons; primary = .btn.primary.big
+       </div>
+     </section>
+
+   Sizing: the dial takes the width it can, but never more than the viewport
+   height minus --dial-reserve (the room the rest of the screen needs; see
+   dial.css), so the primary button stays on screen without scrolling — on a
+   375×667 phone the dial is ~343px wide (~190px tall) and the panel's first
+   button sits ~600px down. Keep .game-head to one row (≤ 56px) and the panel
+   to a prompt line + one row of big buttons + at most one row of small ones
+   (≤ ~170px). A phase that can need more makes its content fit instead of
+   shrinking every phase's dial: the online reveal under a long clue shrinks
+   the clue's face on small phones (online.css, .og-clue-bubble.is-long).
+
+   Short landscape phones (height ≤ 520px): the screen becomes two columns —
+   dial on the left, panel on the right, header across the top — and the
+   reserve drops so the dial fills the column's height. */
+
+.game-screen {
+  --dial-reserve: 405px;
+}
+
+.game-screen.active {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: calc(100svh - var(--topbar-h) - var(--safe-t));
+  padding-top: 2px;
+  padding-bottom: max(14px, var(--safe-b));
+}
+
+/* No wider than the dial and panel below it, so on a desktop the round and
+   the scores sit over the game rather than out at the window's edges. */
+.game-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  max-width: 620px;
+  min-height: 44px;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+/* The round counter in a game header, the same in both modes:
+   <div class="game-round"><span class="game-round-k">Round</span>
+     <span class="game-round-v"><b>2</b><span class="game-round-sep">/</span><span>3</span></span></div> */
+.game-round {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+  min-width: 44px;
+  line-height: 1;
+}
+
+.game-round-k {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-soft);
+}
+
+.game-round-v {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-top: 3px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--c-ink-soft);
+}
+
+.game-round-v b {
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.game-round-sep {
+  opacity: 0.6;
+}
+
+@media (max-width: 359px) {
+  .game-round-k {
+    display: none;
+  }
+}
+
+.game-stage {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.game-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.panel-prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 19px;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding-bottom: 6px; /* the buttons' ledges */
+}
+
+.panel-actions .btn.big {
+  flex: 1 1 200px;
+  max-width: 380px;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  :root {
+    --topbar-h: 50px;
+  }
+
+  .game-screen {
+    --dial-reserve: 175px;
+  }
+
+  .game-screen.active {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(220px, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'head head'
+      'stage panel';
+    column-gap: 22px;
+    row-gap: 4px;
+    align-items: center;
+    padding-bottom: max(8px, var(--safe-b));
+  }
+
+  .game-head {
+    grid-area: head;
+    max-width: none;
+    min-height: 40px;
+  }
+
+  .game-stage {
+    grid-area: stage;
+  }
+
+  .game-panel {
+    grid-area: panel;
+  }
+
+  .panel-prompt {
+    font-size: 17px;
+  }
+
+  .panel-actions .btn.big {
+    --btn-h: 52px;
+    flex-basis: 100%;
+  }
+}
+
+/* --- reduced motion ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

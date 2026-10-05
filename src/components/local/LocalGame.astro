@@ -1,0 +1,86 @@
+---
+// The pass-and-play game screen: header strip (exit, round, score chips),
+// the dial, and one phase panel that always says who holds the device and
+// offers one big next step. local.js shows exactly one of the action buttons
+// per phase:
+//   handoff  #local-ready                  pass to the team's psychic
+//   psychic  #local-show → #local-handover (+ #local-peek, #local-newcard)
+//   guess    #local-lock                   the team turns the needle
+//   rival    #local-call-left / -right     the next team calls a side
+//   reveal   #local-next                   points fly, then on to the next team
+import Dial from '../Dial.astro';
+import '../../styles/local.css';
+---
+
+<section class="screen game-screen local-game" data-screen="local-game" aria-labelledby="local-game-title">
+  <h1 class="sr-only" id="local-game-title">Pass &amp; play</h1>
+
+  <div class="game-head local-head">
+    <button class="btn icon ghost small" id="local-exit" type="button" aria-label="Exit to home (the game is saved)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11.2L12 4l8.5 7.2"></path><path d="M6 9.5V19a1 1 0 0 0 1 1h3.5v-5.5h3V20H17a1 1 0 0 0 1-1V9.5"></path></svg>
+    </button>
+    <div class="game-round" id="local-round" role="group">
+      <span class="game-round-k" aria-hidden="true">Round</span>
+      <span class="game-round-v"><b id="local-round-n">1</b><span class="game-round-sep">/</span><span id="local-round-of">3</span></span>
+    </div>
+    <div class="local-scores" id="local-scores" role="list" aria-label="Scores"></div>
+  </div>
+
+  <div class="game-stage">
+    <Dial id="local-dial" />
+  </div>
+
+  <div class="game-panel local-panel" id="local-panel" data-phase="handoff">
+    <div class="local-who" id="local-who">
+      <span class="local-who-badge" id="local-who-badge"></span>
+      <span class="local-who-text">
+        <b class="local-who-name" id="local-who-name"></b>
+        <span class="local-who-line" id="local-who-line" role="status"></span>
+      </span>
+      <span class="local-who-extra hidden" id="local-who-extra"></span>
+    </div>
+
+    <div class="panel-actions local-actions">
+      <button class="btn primary big" id="local-ready" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="3" fill="currentColor"></circle></svg>
+        <span class="btn-label">I'm the psychic</span>
+      </button>
+      <button class="btn primary big hidden" id="local-show" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1.6" fill="currentColor"></circle></svg>
+        <span class="btn-label">Show target</span>
+      </button>
+      <button class="btn primary big hidden" id="local-handover" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13l-3.5-3.5"></path><path d="M20 16H7l3.5 3.5"></path></svg>
+        <span class="btn-label">Hand over</span>
+      </button>
+      <button class="btn primary big hidden" id="local-lock" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" fill="currentColor" stroke="none"></rect><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"></path></svg>
+        <span class="btn-label">Lock in</span>
+      </button>
+      <button class="btn brand big local-call hidden" id="local-call-left" type="button" aria-label="Target is left of the needle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5.5M11 5.5L4.5 12l6.5 6.5"></path></svg>
+        <span class="btn-label">Left</span>
+      </button>
+      <button class="btn brand big local-call hidden" id="local-call-right" type="button" aria-label="Target is right of the needle">
+        <span class="btn-label">Right</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13.5M13 5.5l6.5 6.5-6.5 6.5"></path></svg>
+      </button>
+      <button class="btn primary big hidden" id="local-next" type="button">
+        <span class="btn-label" id="local-next-label">Next</span>
+        <span class="local-next-badge" id="local-next-badge"></span>
+      </button>
+    </div>
+
+    <div class="row local-sub hidden" id="local-sub">
+      <button class="btn small ghost hidden" id="local-peek" type="button">
+        <svg class="local-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        <svg class="local-eye-shut" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10s3.5 5 9 5 9-5 9-5"></path><path d="M6.5 13.6L4.8 16M12 15v3M17.5 13.6l1.7 2.4"></path></svg>
+        <span class="btn-label" id="local-peek-label">Hide</span>
+      </button>
+      <button class="btn small ghost" id="local-newcard" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6.5" width="12" height="14" rx="2.5"></rect><path d="M8.5 3.5h9a3 3 0 0 1 3 3v10"></path></svg>
+        <span class="btn-label">New card</span>
+      </button>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,26 @@
+---
+// End of a pass-and-play game: the winner(s) up top, every team ranked with
+// an animated score bar (ties share a place), Play again (same teams, scores
+// reset) and New game. With one team it is co-op: the score out of the
+// maximum and a title for it. local-results.js fills it in.
+import '../../styles/local.css';
+---
+
+<section class="screen local-results" data-screen="local-results" aria-labelledby="local-results-title">
+  <div class="screen-inner">
+    <div class="local-podium" id="local-podium" aria-hidden="true"></div>
+    <h1 class="screen-title local-results-title" id="local-results-title">Results</h1>
+    <p class="local-results-sub" id="local-results-sub"></p>
+    <ol class="local-ranking" id="local-ranking" aria-label="Final scores"></ol>
+    <div class="local-results-actions">
+      <button class="btn primary big block" id="local-again" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"></path><path d="M20 4.5V11h-6.5"></path></svg>
+        <span class="btn-label">Play again</span>
+      </button>
+      <button class="btn ghost block" id="local-new" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+        <span class="btn-label">New game</span>
+      </button>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Topbar from '../components/Topbar.astro';
+import Home from '../components/Home.astro';
+import HowTo from '../components/HowTo.astro';
+import LocalSetup from '../components/local/LocalSetup.astro';
+import LocalGame from '../components/local/LocalGame.astro';
+import LocalResults from '../components/local/LocalResults.astro';
+import Lobby from '../components/online/Lobby.astro';
+import OnlineGame from '../components/online/OnlineGame.astro';
+import Login from '../components/online/Login.astro';
+---
+
+<Layout>
+  <div class="app">
+    <Topbar />
+    <main class="screens" id="screens">
+      <Home />
+      <LocalSetup />
+      <LocalGame />
+      <LocalResults />
+      <Lobby />
+      <OnlineGame />
+    </main>
+  </div>
+
+  <HowTo />
+  <Login />
+  <div class="challenge-stack" id="challenge-stack" role="region" aria-live="polite" aria-label="Challenges"></div>
+  <div class="toast" id="toast" role="status"></div>
+</Layout>
+
+<script>
+  import { initApp } from '../scripts/app.js';
+  initApp();
+</script>

@@ -1,0 +1,136 @@
+---
+// The online game screen (one room): a header with the duo — both avatars
+// with presence dots, the shared score in between — and the round; the dial;
+// and a phase panel whose views swap with the room's phase and your role in
+// it (psychic, guesser or spectator). When the game is over the dial makes
+// way for the final score card. Driven by src/scripts/online-game.js.
+import Dial from '../Dial.astro';
+import '../../styles/online.css';
+---
+
+<section class="screen game-screen online-game" data-screen="online-game" aria-labelledby="online-title">
+  <h2 class="sr-only" id="online-title">Online game</h2>
+
+  <div class="game-head og-head">
+    <button class="btn small ghost og-leave hidden" id="online-leave" type="button" aria-label="Leave game">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14M10 16.5L5.5 12 10 7.5M5.5 12H15"></path></svg>
+      <span class="btn-label">Leave</span>
+    </button>
+    <button class="btn icon small ghost og-exit" id="online-exit" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+    </button>
+
+    <div class="og-duo">
+      <span class="og-player" id="online-slot-0">
+        <span class="og-avatar"></span>
+        <span class="og-dot" aria-hidden="true"></span>
+        <span class="og-name"></span>
+      </span>
+      <span class="og-score" id="online-score-chip" aria-label="Duo score">
+        <b class="og-score-num" id="online-score">0</b><small class="og-score-max" id="online-max"></small>
+      </span>
+      <span class="og-player is-right" id="online-slot-1">
+        <span class="og-name"></span>
+        <span class="og-avatar"></span>
+        <span class="og-dot" aria-hidden="true"></span>
+      </span>
+    </div>
+
+    <div class="game-round" id="online-round" role="group" aria-label="Round">
+      <span class="game-round-k" aria-hidden="true">Round</span>
+      <span class="game-round-v"><b id="online-round-num">1</b><span class="game-round-sep">/</span><span id="online-round-total">5</span></span>
+    </div>
+  </div>
+
+  <div class="game-stage og-stage" id="online-stage">
+    <Dial id="online-dial" />
+    <div class="og-final hidden" id="online-final">
+      <div class="og-final-duo" id="online-final-duo" aria-hidden="true"></div>
+      <p class="og-final-tier" id="online-final-tier"></p>
+      <p class="og-final-score">
+        <b id="online-final-score">0</b><span class="og-final-max">/<span id="online-final-max">20</span></span>
+      </p>
+      <p class="og-final-note" id="online-final-note"></p>
+      <ol class="og-pips" id="online-final-pips" aria-label="Points per round"></ol>
+    </div>
+  </div>
+
+  <div class="game-panel og-panel" id="online-panel">
+    <div class="og-clue hidden" id="online-clue">
+      <span class="og-clue-avatar" id="online-clue-avatar"></span>
+      <p class="og-clue-bubble" id="online-clue-bubble">
+        <span class="sr-only" id="online-clue-full"></span>
+        <span class="og-clue-text" id="online-clue-text" aria-hidden="true"></span>
+      </p>
+    </div>
+
+    <!-- connecting -->
+    <div class="og-view" data-view="loading">
+      <p class="panel-prompt og-loading" role="status"><span class="og-spinner" aria-hidden="true"></span><span id="online-loading-text">Connecting…</span></p>
+    </div>
+
+    <!-- psychic, clue phase -->
+    <div class="og-view hidden" data-view="clue">
+      <form class="og-clue-form" id="online-clue-form" autocomplete="off">
+        <label class="field og-clue-field">
+          <span class="sr-only">Your clue</span>
+          <input id="online-clue-input" type="text" maxlength="60" enterkeyhint="send" placeholder="Your clue…" autocomplete="off" />
+          <span class="og-clue-count" id="online-clue-count" aria-hidden="true"></span>
+        </label>
+        <button class="btn primary og-send" id="online-send" type="submit" aria-label="Send clue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M4.5 11.6L19.5 4.5 15 19.5l-3.6-6.3z"></path><path d="M11.4 13.2l4-4"></path></svg>
+        </button>
+      </form>
+      <div class="og-small-row">
+        <button class="btn small ghost" id="online-redraw" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6.5" width="12" height="14" rx="2.5"></rect><path d="M8.5 3.5h9a3 3 0 0 1 3 3v10"></path></svg>
+          New card
+        </button>
+      </div>
+    </div>
+
+    <!-- someone else's move -->
+    <div class="og-view hidden" data-view="wait">
+      <p class="panel-prompt og-wait">
+        <span class="og-wait-avatar" id="online-wait-avatar"></span>
+        <span><b id="online-wait-name"></b> <span id="online-wait-verb"></span></span>
+        <span class="og-dots" id="online-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      </p>
+    </div>
+
+    <!-- guesser, guess phase -->
+    <div class="og-view hidden" data-view="guess">
+      <div class="panel-actions">
+        <button class="btn primary big" id="online-lock" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" fill="currentColor" stroke="none"></rect><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"></path></svg>
+          <span class="btn-label">Lock in</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- both, reveal phase -->
+    <div class="og-view hidden" data-view="reveal">
+      <p class="panel-prompt og-result" id="online-result"></p>
+      <div class="panel-actions">
+        <button class="btn primary big" id="online-next" type="button">
+          <span class="btn-label" id="online-next-label">Next round</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- game over -->
+    <div class="og-view hidden" data-view="done">
+      <div class="panel-actions">
+        <button class="btn big og-lobby" id="online-lobby" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="8.5" r="3.5" fill="currentColor"></circle><circle cx="15.5" cy="8.5" r="3.5" fill="currentColor"></circle><path d="M2 20a6.5 6.5 0 0 1 13 0zM9 20a6.5 6.5 0 0 1 13 0z" fill="currentColor"></path></svg>
+          Lobby
+        </button>
+        <button class="btn primary big" id="online-rematch" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 9A8 8 0 0 0 5.2 7.2M4.5 4v3.6h3.6M4.5 15a8 8 0 0 0 14.3 1.8M19.5 20v-3.6h-3.6"></path></svg>
+          <span class="btn-label" id="online-rematch-label">Rematch</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

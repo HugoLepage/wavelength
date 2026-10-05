@@ -1,0 +1,107 @@
+---
+// How to play: four little pictures of a turn, the 2 · 3 · 4 scoring legend
+// in the band colours, and one line per mode. Opened by #btn-help (ui.js);
+// any [data-close] inside closes it.
+import '../styles/home.css';
+---
+
+<div class="overlay" id="howto-overlay">
+  <div class="modal howto-modal" role="dialog" aria-modal="true" aria-labelledby="howto-title" tabindex="-1">
+    <button class="btn icon ghost small modal-close" type="button" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button>
+    <h2 class="modal-title" id="howto-title">How to play</h2>
+
+    <ol class="howto-steps">
+      <li style="--i: 0">
+        <svg class="ht-art" viewBox="0 0 100 76" aria-hidden="true">
+          <path class="ht-motion" d="M6 30h12M9 40h10M4 50h13"></path>
+          <rect class="ht-card-back" x="24" y="14" width="56" height="40" rx="8" transform="rotate(-9 52 34)"></rect>
+          <g transform="rotate(5 54 40)">
+            <rect class="ht-card" x="25" y="21" width="60" height="38" rx="8"></rect>
+            <path class="ht-end-l" d="M33 21h6v38h-6a8 8 0 0 1-8-8V29a8 8 0 0 1 8-8z"></path>
+            <path class="ht-end-r" d="M71 21h6a8 8 0 0 1 8 8v22a8 8 0 0 1-8 8h-6z"></path>
+            <rect class="ht-word" x="42" y="31" width="11" height="5" rx="2.5"></rect>
+            <rect class="ht-word" x="57" y="31" width="11" height="5" rx="2.5"></rect>
+            <rect class="ht-bar-l" x="43" y="44" width="12" height="5" rx="2.5"></rect>
+            <rect class="ht-bar-r" x="55" y="44" width="12" height="5" rx="2.5"></rect>
+          </g>
+        </svg>
+        <span class="ht-cap">Draw a card</span>
+      </li>
+      <li style="--i: 1">
+        <svg class="ht-art" viewBox="0 0 100 76" aria-hidden="true">
+          <path class="ht-rim" d="M10 64A40 40 0 0 1 90 64V68Q90 72 86 72H14Q10 72 10 68Z"></path>
+          <path class="ht-face" d="M16 64A34 34 0 0 1 84 64Z"></path>
+          <path class="ht-b2" d="M50 64L24.72 42.79A33 33 0 0 1 28.79 38.72Z"></path>
+          <path class="ht-b3" d="M50 64L28.79 38.72A33 33 0 0 1 33.5 35.42Z"></path>
+          <path class="ht-b4" d="M50 64L33.5 35.42A33 33 0 0 1 38.71 32.99Z"></path>
+          <path class="ht-b3" d="M50 64L38.71 32.99A33 33 0 0 1 44.27 31.5Z"></path>
+          <path class="ht-b2" d="M50 64L44.27 31.5A33 33 0 0 1 50 31Z"></path>
+          <circle class="ht-cap-dot" cx="50" cy="64" r="4"></circle>
+          <g class="ht-eye">
+            <path class="ht-eye-white" d="M60 22q12-13 24 0q-12 13-24 0z"></path>
+            <circle class="ht-pupil" cx="72" cy="22" r="4.6"></circle>
+            <circle class="ht-glint" cx="73.6" cy="20.4" r="1.4"></circle>
+          </g>
+        </svg>
+        <span class="ht-cap">Psychic peeks</span>
+      </li>
+      <li style="--i: 2">
+        <svg class="ht-art" viewBox="0 0 100 76" aria-hidden="true">
+          <path class="ht-bubble" d="M22 12h56a12 12 0 0 1 12 12v18a12 12 0 0 1-12 12H44l-14 12 2-12h-10a12 12 0 0 1-12-12V24a12 12 0 0 1 12-12z"></path>
+          <text class="ht-clue" x="50" y="34">“Lava”</text>
+        </svg>
+        <span class="ht-cap">Give a clue</span>
+      </li>
+      <li style="--i: 3">
+        <svg class="ht-art" viewBox="0 0 100 76" aria-hidden="true">
+          <path class="ht-rim" d="M10 64A40 40 0 0 1 90 64V68Q90 72 86 72H14Q10 72 10 68Z"></path>
+          <path class="ht-shutter" d="M16 64A34 34 0 0 1 84 64Z"></path>
+          <path class="ht-arrow" d="M15.07 32.55A47 47 0 0 1 72.07 22.5"></path>
+          <path class="ht-arrow-head" d="M69.35 17.15L72.07 22.5L66.12 23.24"></path>
+          <g class="ht-needle">
+            <path d="M47.53 63.2L59.27 35.47L52.47 64.8Z"></path>
+            <circle cx="50" cy="64" r="5"></circle>
+          </g>
+        </svg>
+        <span class="ht-cap">Turn the dial</span>
+      </li>
+    </ol>
+
+    <div class="howto-score">
+      <svg class="ht-legend" viewBox="46 12 148 74" aria-hidden="true">
+        <path class="ht-b2" d="M51.82 41.14A112 112 0 0 1 77.14 26.53L96.27 72.72A62 62 0 0 0 82.26 80.81Z"></path>
+        <path class="ht-b3" d="M77.14 26.53A112 112 0 0 1 105.38 18.96L111.91 68.53A62 62 0 0 0 96.27 72.72Z"></path>
+        <path class="ht-b4" d="M105.38 18.96A112 112 0 0 1 134.62 18.96L128.09 68.53A62 62 0 0 0 111.91 68.53Z"></path>
+        <path class="ht-b3" d="M134.62 18.96A112 112 0 0 1 162.86 26.53L143.73 72.72A62 62 0 0 0 128.09 68.53Z"></path>
+        <path class="ht-b2" d="M162.86 26.53A112 112 0 0 1 188.18 41.14L157.74 80.81A62 62 0 0 0 143.73 72.72Z"></path>
+        <text class="ht-num" x="76.5" y="54.66">2</text>
+        <text class="ht-num" x="97.48" y="45.96">3</text>
+        <text class="ht-num p4" x="120" y="43">4</text>
+        <text class="ht-num" x="142.52" y="45.96">3</text>
+        <text class="ht-num" x="163.5" y="54.66">2</text>
+      </svg>
+      <p class="ht-score-cap">points — closer is better</p>
+    </div>
+
+    <ul class="howto-modes">
+      <li>
+        <span class="ht-mode-icon local" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2.5" fill="currentColor"></rect></svg>
+        </span>
+        <span><b>Pass &amp; play</b> One device, passed around.</span>
+      </li>
+      <li>
+        <span class="ht-mode-icon online" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="8.5" cy="8.5" r="3.5" fill="currentColor"></circle><circle cx="15.5" cy="8.5" r="3.5" fill="currentColor"></circle><path d="M2 20a6.5 6.5 0 0 1 13 0zM9 20a6.5 6.5 0 0 1 13 0z" fill="currentColor"></path></svg>
+        </span>
+        <span><b>Online</b> Team up with a friend on two devices.</span>
+      </li>
+    </ul>
+
+    <div class="modal-actions">
+      <button class="btn primary" type="button" data-close>Got it</button>
+    </div>
+  </div>
+</div>

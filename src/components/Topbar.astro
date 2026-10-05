@@ -1,0 +1,47 @@
+---
+// The one-row top bar: wordmark (→ home), the online/sign-in button (driven
+// by online.js), how-to and theme buttons (ui.js). Fits a 320px phone: the
+// wordmark collapses to its glyph below 360px, or below 460px once a name is
+// shown, and a long signed-in name is cut short with an ellipsis.
+---
+
+<header class="topbar">
+  <button class="logo" id="btn-logo" type="button" aria-label="Wavelength — home">
+    <svg class="logo-glyph" viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M3 44a29 29 0 0 1 58 0v7a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5z" fill="var(--dial-rim)"></path>
+      <path d="M9 44a23 23 0 0 1 46 0z" fill="var(--dial-face)"></path>
+      <path d="M32 44L33.7 21.06A23 23 0 0 1 37.47 21.66Z" fill="var(--c-band-2)"></path>
+      <path d="M32 44L37.47 21.66A23 23 0 0 1 41.08 22.87Z" fill="var(--c-band-3)"></path>
+      <path d="M32 44L41.08 22.87A23 23 0 0 1 44.44 24.66Z" fill="var(--c-band-4)"></path>
+      <path d="M32 44L44.44 24.66A23 23 0 0 1 47.46 26.97Z" fill="var(--c-band-3)"></path>
+      <path d="M32 44L47.46 26.97A23 23 0 0 1 50.06 29.76Z" fill="var(--c-band-2)"></path>
+      <path d="M29.26 42.78L40.54 24.82L34.74 45.22Z" fill="var(--dial-needle)" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"></path>
+      <circle cx="32" cy="44" r="5.5" fill="var(--dial-needle)" stroke="#fff" stroke-width="2"></circle>
+    </svg>
+    <span class="logo-word">wave<b>length</b></span>
+  </button>
+
+  <div class="topbar-actions">
+    <button class="btn small online-btn" id="btn-online" type="button">
+      <span class="online-dot hidden" id="online-dot" aria-hidden="true"></span>
+      <span id="online-label">Sign in</span>
+      <span class="hidden" id="online-name"></span>
+    </button>
+    <button class="btn icon ghost" id="btn-help" type="button" aria-label="How to play">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5"></circle>
+        <path d="M9.4 9.3a2.7 2.7 0 0 1 5.2 1c0 1.8-2.6 2.3-2.6 3.9"></path>
+        <circle cx="12" cy="17.3" r="0.6" fill="currentColor"></circle>
+      </svg>
+    </button>
+    <button class="btn icon ghost" id="btn-theme" type="button" aria-label="Switch to dark theme">
+      <svg class="theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"></path>
+      </svg>
+      <svg class="theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.2"></circle>
+        <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"></path>
+      </svg>
+    </button>
+  </div>
+</header>

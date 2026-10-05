@@ -1,0 +1,89 @@
+{
+  "rules": {
+    "users": {
+      ".read": true,
+      "$user": {
+        ".validate": "$user.matches(/^[a-z0-9_-]{2,20}$/)",
+        "auth": {
+          ".write": "!data.exists()",
+          ".validate": "newData.hasChildren(['salt', 'verifier']) && newData.child('salt').isString() && newData.child('verifier').isString()"
+        },
+        "profile": {
+          ".write": true,
+          "name": { ".validate": "newData.isString() && newData.val().toLowerCase() === $user" }
+        },
+        "stats": {
+          ".write": true,
+          "totals": {
+            "$counter": { ".validate": "newData.isNumber()" }
+          },
+          "partners": {
+            "$partner": {
+              ".validate": "$partner.matches(/^[a-z0-9_-]{2,20}$/)",
+              "name": { ".validate": "newData.isString() && newData.val().length <= 40" },
+              "$counter": { ".validate": "newData.isNumber()" }
+            }
+          }
+        },
+        "matches": {
+          ".write": true,
+          ".indexOn": ["startedAt"]
+        }
+      }
+    },
+    "presence": {
+      ".read": true,
+      ".write": true
+    },
+    "challenges": {
+      ".read": true,
+      ".write": true
+    },
+    "rooms": {
+      ".read": true,
+      "$room": {
+        ".write": "!data.exists() || (data.child('status').val() !== 'finished' && newData.child('step').val() === data.child('step').val() + 1)",
+        ".validate": "$room.matches(/^[a-z0-9]{6,20}$/) && newData.hasChildren(['id', 'status', 'step', 'players', 'rounds', 'round', 'firstPsychic', 'phase', 'card', 'score']) && newData.child('id').val() === $room && (data.exists() || (newData.child('step').val() === 0 && newData.child('status').val() === 'active')) && (!data.exists() || (newData.child('players/0/uname').val() === data.child('players/0/uname').val() && newData.child('players/1/uname').val() === data.child('players/1/uname').val() && newData.child('rounds').val() === data.child('rounds').val() && newData.child('firstPsychic').val() === data.child('firstPsychic').val()))",
+        "id": { ".validate": "newData.isString()" },
+        "status": { ".validate": "newData.val() === 'active' || newData.val() === 'finished'" },
+        "step": { ".validate": "newData.isNumber()" },
+        "players": {
+          ".validate": "newData.hasChildren(['0', '1'])",
+          "$seat": {
+            ".validate": "($seat === '0' || $seat === '1') && newData.child('uname').isString() && newData.child('uname').val().matches(/^[a-z0-9_-]{2,20}$/)"
+          }
+        },
+        "rounds": { ".validate": "newData.isNumber() && newData.val() >= 3 && newData.val() <= 12" },
+        "round": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < newData.parent().child('rounds').val()" },
+        "firstPsychic": { ".validate": "newData.val() === 0 || newData.val() === 1" },
+        "phase": { ".validate": "newData.val() === 'clue' || newData.val() === 'guess' || newData.val() === 'reveal' || newData.val() === 'done'" },
+        "card": {
+          ".validate": "newData.hasChildren(['index', 'left', 'right', 'target']) && newData.child('target').isNumber() && newData.child('target').val() >= 0 && newData.child('target').val() <= 100"
+        },
+        "clue": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 60" },
+        "guess": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+        "points": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4" },
+        "score": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= newData.parent().child('rounds').val() * 4" },
+        "endReason": { ".validate": "newData.val() === 'complete' || newData.val() === 'left'" },
+        "leftBy": { ".validate": "newData.val() === 0 || newData.val() === 1" },
+        "statsRecorded": {
+          ".write": "data.val() !== true && newData.exists() && data.parent().child('status').val() === 'finished'",
+          ".validate": "newData.isBoolean() || (newData.hasChildren(['by', 'at']) && newData.child('at').isNumber())"
+        }
+      }
+    },
+    "live": {
+      ".read": true,
+      "$room": {
+        ".write": "root.child('rooms').child($room).exists()",
+        ".validate": "$room.matches(/^[a-z0-9]{6,20}$/)",
+        "needle": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+        "typing": { ".validate": "newData.isBoolean()" },
+        "by": { ".validate": "newData.val() === 0 || newData.val() === 1 || (newData.isString() && newData.val().length <= 20)" },
+        "step": { ".validate": "newData.isNumber()" },
+        "at": { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

@@ -1,0 +1,1447 @@
+/* Online mode: the sign-in overlay, the lobby screen, the challenge cards that
+   pop up anywhere, and the online game screen (header duo, clue bubble, phase
+   panel, final card). Built on the shared classes and tokens in base.css —
+   colours are tokens only. */
+
+/* --- shared bits ------------------------------------------------------------------- */
+
+.og-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  vertical-align: -3px;
+  border-radius: 50%;
+  border: 3px solid var(--c-line-strong);
+  border-top-color: var(--c-primary);
+  animation: spin 0.8s linear infinite;
+}
+
+/* The top bar's dot while a saved sign-in is being checked. */
+.online-dot.is-pending {
+  background: var(--c-ink-faint);
+  box-shadow: 0 0 0 3px var(--c-line);
+  animation: dot-wait 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes dot-wait {
+  to {
+    opacity: 0.35;
+  }
+}
+
+/* --- sign in ----------------------------------------------------------------------- */
+
+.login-modal {
+  padding-top: 22px;
+}
+
+.login-avatar {
+  display: grid;
+  place-items: center;
+  height: 78px;
+  margin: 0 auto 10px;
+  transition: filter 0.25s ease, opacity 0.25s ease;
+}
+
+.login-avatar.is-empty {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.login-avatar .team-badge {
+  filter: drop-shadow(0 8px 12px var(--dial-shadow));
+}
+
+.login-form {
+  margin-top: 6px;
+  text-align: left;
+}
+
+.login-error {
+  min-height: 18px;
+  margin: -4px 0 0;
+}
+
+.login-error:empty {
+  min-height: 0;
+  margin: 0;
+}
+
+.login-submit {
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+
+/* --- lobby ---------------------------------------------------------------------------- */
+
+.lobby {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.lobby-me-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.lobby-me-avatar {
+  display: inline-flex;
+  flex: none;
+}
+
+.lobby-me-avatar:not(:empty) {
+  animation: lobby-wave 0.9s var(--ease-spring) both;
+}
+
+@keyframes lobby-wave {
+  0% {
+    transform: scale(0.6) rotate(-14deg);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.08) rotate(8deg);
+    opacity: 1;
+  }
+  80% {
+    transform: rotate(-4deg);
+  }
+}
+
+.lobby-me-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: clamp(22px, 6vw, 28px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-me-row .btn {
+  flex: none;
+}
+
+/* Phones: Sign out is just its icon (it keeps its aria-label and tooltip),
+   like the game's Leave button, so the name gets the row. */
+@media (max-width: 479px) {
+  .lobby-me-row .btn.lobby-signout {
+    width: var(--btn-h);
+    padding: 0;
+  }
+
+  .lobby-signout .btn-label {
+    display: none;
+  }
+}
+
+.lobby-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+.lobby-stat {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 4px 9px;
+  border-radius: var(--r-md);
+  background: var(--c-surface-2);
+  box-shadow: var(--sh-ring);
+  min-width: 0;
+}
+
+.lobby-stat dt {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--c-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.lobby-stat dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.lobby-stat.is-bulls dd {
+  color: var(--c-band-4-text);
+}
+
+.lobby-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.lobby-h {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+}
+
+.lobby-live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c-ok);
+  box-shadow: 0 0 0 0 var(--c-ok-soft);
+  animation: live-ping 1.8s ease-out infinite;
+}
+
+@keyframes live-ping {
+  0% {
+    box-shadow: 0 0 0 0 var(--c-ok-soft);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px transparent;
+  }
+}
+
+.lobby-count {
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--c-ok-soft);
+  color: var(--c-ink);
+  font-size: 14px;
+  text-align: center;
+}
+
+.lobby-count:empty {
+  display: none;
+}
+
+.lobby-rounds {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.lobby-rounds-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--c-ink-soft);
+}
+
+.small-stepper {
+  padding: 3px;
+}
+
+.small-stepper .stepper-btn {
+  width: 34px;
+  height: 34px;
+  font-size: 20px;
+}
+
+.small-stepper .stepper-value {
+  font-size: 20px;
+  min-width: 2.2ch;
+}
+
+.lobby-players,
+.lobby-recent {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lobby-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 8px 8px 8px;
+  border-radius: var(--r-lg);
+  background: var(--c-surface-2);
+  box-shadow: var(--sh-ring);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lobby-player.is-waiting {
+  background: var(--c-brand-soft);
+}
+
+.lobby-player .btn {
+  flex: none;
+  margin-bottom: 3px;
+}
+
+.lp-avatar {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.lp-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--c-ok);
+  border: 2.5px solid var(--c-surface-2);
+}
+
+.lobby-player.in-game .lp-dot {
+  background: var(--c-band-3);
+}
+
+.lp-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.lp-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lp-status {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--c-ink-soft);
+}
+
+.lp-status.is-busy {
+  color: var(--c-band-3-text);
+}
+
+.lp-status.is-incoming {
+  color: var(--c-primary-text);
+}
+
+.lp-status.is-waiting {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--c-brand);
+}
+
+.lp-timer {
+  display: block;
+  width: min(120px, 100%);
+  height: 4px;
+  border-radius: 4px;
+  background: var(--c-brand);
+  opacity: 0.6;
+  transform-origin: left center;
+  animation: arm-drain var(--ttl, 60000ms) linear forwards;
+}
+
+.lobby-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px 6px;
+  text-align: center;
+}
+
+.lobby-empty.small {
+  padding: 4px 8px 2px;
+}
+
+.lobby-empty-art {
+  width: 120px;
+  height: 64px;
+  margin-bottom: 6px;
+  overflow: visible;
+}
+
+.le-wave {
+  fill: none;
+  stroke: var(--c-brand);
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: le-wave 2.4s ease-out infinite;
+}
+
+.le-wave.w2 {
+  animation-delay: 0.3s;
+}
+
+.le-wave.w3 {
+  animation-delay: 0.6s;
+}
+
+.le-dot {
+  fill: var(--c-primary);
+}
+
+@keyframes le-wave {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  70%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.lobby-empty-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.lobby-empty-sub {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-ink-soft);
+}
+
+.lobby-game {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 10px 8px 8px;
+  border-radius: var(--r-lg);
+  background: var(--c-surface-2);
+  box-shadow: var(--sh-ring);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.18s var(--ease-out), background-color 0.15s ease;
+}
+
+.lobby-game:hover {
+  transform: translateX(3px);
+  background: var(--c-well);
+}
+
+.lobby-game:active {
+  transform: scale(0.98);
+}
+
+.lg-avatar {
+  display: inline-flex;
+  flex: none;
+}
+
+.lg-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.lg-text b {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lg-text small {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lg-score {
+  flex: none;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.lg-score b {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.lg-score small {
+  font-size: 14px;
+  color: var(--c-ink-soft);
+}
+
+.lg-score.is-left b {
+  color: var(--c-ink-soft);
+}
+
+.lg-tag {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--c-line);
+  color: var(--c-ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.lg-tag.is-live {
+  background: var(--c-primary-soft);
+  color: var(--c-primary-text);
+}
+
+.lg-go {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--c-ink-faint);
+}
+
+/* Phones: beside a Challenge button a name gets only a few letters, and this
+   is where players pick whom to play. The name takes the whole top line; the
+   status and the button share the one below it. */
+@media (max-width: 430px) {
+  .lobby-player {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'av name name'
+      'av status btn';
+    column-gap: 12px;
+    row-gap: 2px;
+    align-items: center;
+  }
+
+  .lobby-player .lp-avatar {
+    grid-area: av;
+  }
+
+  .lobby-player .lp-text {
+    display: contents;
+  }
+
+  .lobby-player .lp-name {
+    grid-area: name;
+  }
+
+  .lobby-player .lp-status {
+    grid-area: status;
+    min-width: 0;
+  }
+
+  .lobby-player .btn {
+    grid-area: btn;
+  }
+}
+
+@media (max-width: 380px) {
+  .lobby-me.card,
+  .lobby-section.card {
+    padding: 14px;
+  }
+
+  .lobby-stat {
+    padding-inline: 2px; /* "Per round" needs every pixel of a 320px tile */
+  }
+
+  .lobby-stat dd {
+    font-size: 22px;
+  }
+
+  .lobby-stat dt {
+    font-size: 11px;
+  }
+
+  .lobby-player {
+    column-gap: 10px;
+  }
+
+  /* Recent games: room for "3 rounds · Today" next to a score and a tag.
+     The whole row is the link, so the chevron can go. */
+  .lobby-game {
+    gap: 8px;
+  }
+
+  .lg-go {
+    display: none;
+  }
+
+  .lg-tag {
+    padding-inline: 7px;
+  }
+
+  .lg-text small {
+    font-size: 12px;
+  }
+}
+
+/* --- challenge cards (anywhere) ---------------------------------------------------- */
+
+.challenge-stack {
+  position: fixed;
+  top: calc(var(--safe-t) + var(--topbar-h) + 4px);
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(380px, calc(100vw - 24px));
+  pointer-events: none;
+}
+
+.challenge-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 14px;
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  box-shadow: var(--sh-3);
+  overflow: hidden;
+  pointer-events: auto;
+  animation: cc-in 0.5s var(--ease-spring) both;
+}
+
+.challenge-card.leaving {
+  animation: cc-out 0.22s ease-in forwards;
+  pointer-events: none;
+}
+
+.challenge-card.is-busy {
+  opacity: 0.75;
+}
+
+@keyframes cc-in {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.92);
+  }
+}
+
+@keyframes cc-out {
+  to {
+    opacity: 0;
+    transform: translateX(30px) scale(0.95);
+  }
+}
+
+.cc-avatar {
+  display: inline-flex;
+  flex: none;
+  animation: cc-hello 1.6s ease-in-out 0.4s infinite;
+  transform-origin: 50% 90%;
+}
+
+@keyframes cc-hello {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0);
+  }
+  70% {
+    transform: rotate(-12deg);
+  }
+  80% {
+    transform: rotate(10deg);
+  }
+  90% {
+    transform: rotate(-5deg);
+  }
+}
+
+.cc-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.cc-text b {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-text small {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-ink-soft);
+}
+
+.cc-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding-bottom: 3px;
+}
+
+.cc-timer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--c-primary);
+  transform-origin: left center;
+  animation: arm-drain var(--ttl, 60000ms) linear forwards;
+}
+
+/* --- online game: header --------------------------------------------------------------- */
+
+.og-head {
+  gap: 6px;
+}
+
+.og-leave,
+.og-exit {
+  flex: none;
+}
+
+.og-leave {
+  padding: 0 0.7em;
+}
+
+/* Narrow phones: the Leave button is just its icon until it is armed, then
+   just "Leave?" — and the score drops its "/max" for those few seconds, so
+   the header still fits one 288px row. */
+@media (max-width: 479px) {
+  .og-leave:not(.armed) .btn-label {
+    display: none;
+  }
+
+  .og-leave:not(.armed) {
+    width: var(--btn-h);
+    padding: 0;
+  }
+
+  .og-leave.armed svg {
+    display: none;
+  }
+
+  .og-head:has(.og-leave.armed) .og-score-max {
+    display: none;
+  }
+}
+
+.og-duo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A slot may give up its name's width (ellipsis), never its avatar's: a
+   squeezed slot would let the avatar spill over the score or the round. */
+.og-player {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 34px;
+  flex: 0 1 auto;
+}
+
+.og-avatar {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  border-radius: 50%;
+  transition: transform 0.3s var(--ease-spring), box-shadow 0.25s ease, filter 0.3s ease, opacity 0.3s ease;
+}
+
+.og-avatar:empty {
+  width: 34px;
+  height: 34px;
+  background: var(--c-line);
+}
+
+.og-player.is-turn .og-avatar {
+  box-shadow: 0 0 0 2.5px var(--c-surface), 0 0 0 5px var(--c-primary);
+  animation: turn-bob 1.6s ease-in-out infinite;
+}
+
+@keyframes turn-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.og-dot {
+  position: absolute;
+  left: 25px;
+  bottom: -1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2.5px solid var(--c-page);
+  background: var(--c-ink-faint);
+  transition: background-color 0.3s ease;
+}
+
+.og-player.is-right .og-dot {
+  left: auto;
+  right: -2px;
+}
+
+.og-player[data-status='here'] .og-dot {
+  background: var(--c-ok);
+}
+
+.og-player[data-status='away'] .og-dot {
+  background: var(--c-band-3);
+}
+
+.og-player[data-status='offline'] .og-avatar {
+  filter: grayscale(0.9);
+  opacity: 0.55;
+}
+
+.og-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  max-width: 120px;
+}
+
+/* Names only where there is room (screen readers still get them). */
+@media (max-width: 519px) {
+  .og-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+.og-score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  flex: none;
+  padding: 5px 13px 6px;
+  border-radius: 999px;
+  background: var(--c-surface);
+  box-shadow: var(--sh-1);
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.og-score-num {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.og-score-max {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-ink-soft);
+}
+
+/* --- online game: stage & final card ------------------------------------------------- */
+
+.og-stage.is-final .dial {
+  display: none;
+}
+
+.og-final {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 24px 20px 22px;
+  border-radius: var(--r-xl);
+  background: var(--c-surface);
+  box-shadow: var(--sh-2);
+  text-align: center;
+}
+
+.og-final-duo {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.og-final-duo .team-badge {
+  outline: 4px solid var(--c-surface);
+}
+
+.og-final-duo .team-badge + .team-badge {
+  margin-left: -12px;
+}
+
+.og-final.is-entering .og-final-duo .team-badge {
+  animation: duo-hop 0.7s var(--ease-spring) both;
+}
+
+.og-final.is-entering .og-final-duo .team-badge + .team-badge {
+  animation-delay: 0.12s;
+}
+
+@keyframes duo-hop {
+  0% {
+    transform: translateY(16px) scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-6px) scale(1.05);
+    opacity: 1;
+  }
+}
+
+.og-final-tier {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(22px, 6.4vw, 30px);
+  line-height: 1.1;
+  color: var(--c-brand);
+}
+
+.og-final-tier.is-left {
+  color: var(--c-ink);
+}
+
+.og-final-score {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.og-final-score b {
+  display: inline-block;
+  font-size: clamp(56px, 17vw, 76px);
+  font-weight: 700;
+  color: var(--c-primary);
+  letter-spacing: -0.02em;
+}
+
+.og-final-max {
+  font-size: clamp(22px, 6vw, 28px);
+  font-weight: 500;
+  color: var(--c-ink-soft);
+}
+
+.og-final-note {
+  margin: 8px 0 0;
+  font-weight: 700;
+  color: var(--c-ink-soft);
+}
+
+.og-pips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.og-pip {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--c-line-strong);
+  color: var(--c-ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.og-pip.p2 {
+  background: var(--c-band-2);
+  color: var(--c-band-ink);
+}
+
+.og-pip.p3 {
+  background: var(--c-band-3);
+  color: var(--c-band-ink);
+}
+
+.og-pip.p4 {
+  background: var(--c-band-4);
+  color: var(--c-primary-ink);
+}
+
+.og-pip.p0 {
+  color: var(--c-ink-soft);
+}
+
+.og-pip.is-empty {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--c-line-strong);
+}
+
+.og-final.is-entering .og-pip {
+  animation: pip-in 0.45s var(--ease-spring) both;
+  animation-delay: calc(0.5s + var(--i, 0) * 0.07s);
+}
+
+@keyframes pip-in {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/* --- online game: panel --------------------------------------------------------------- */
+
+/* One height for every in-play view (as .local-panel), so the dial above
+   never jumps when the phase changes: the reveal (clue bubble + result word
+   + Next) fits when the clue takes a line or two. A longer clue makes the
+   reveal taller (the panel grows, the dial moves up a little); on small
+   phones its face shrinks so it stays within three lines and Next stays on
+   screen (see .og-clue-bubble.is-long). Don't raise this height to cover
+   that: every phase would then overflow a 320×568 screen. The game-over
+   view has no dial above it and keeps its own height. */
+.og-panel:not([data-view='done']) {
+  min-height: 172px;
+  justify-content: flex-start;
+}
+
+.og-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.og-view:not(.hidden) {
+  animation: og-view-in 0.32s var(--ease-out);
+}
+
+@keyframes og-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.og-loading {
+  color: var(--c-ink-soft);
+}
+
+/* The clue: a speech bubble from the psychic's avatar. */
+.og-clue {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 480px;
+  min-width: 0;
+}
+
+.og-clue-avatar {
+  display: inline-flex;
+  flex: none;
+}
+
+.og-clue-bubble {
+  position: relative;
+  min-width: 0;
+  max-width: calc(100% - 46px);
+  margin: 0 0 6px;
+  padding: 9px 16px 10px;
+  border-radius: 20px 20px 20px 6px;
+  background: var(--c-surface);
+  box-shadow: var(--sh-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 21px;
+  line-height: 1.2;
+  text-align: left;
+  overflow-wrap: anywhere;
+  transform-origin: 0% 100%;
+}
+
+/* Small portrait phones (320 wide, or a short Safari viewport): a clue near
+   the 60-character cap would take four lines at 21px and push the reveal's
+   Next off screen. A smaller face (set by online-game.js typeClue for long
+   clues) keeps it to three. Never clamped: the clue must be read whole. */
+@media (orientation: portrait) and (max-width: 359px), (orientation: portrait) and (max-height: 600px) {
+  .og-clue-bubble.is-long {
+    padding: 7px 14px 8px;
+    font-size: 17px;
+  }
+
+  .og-clue:has(.is-long) ~ .og-view {
+    gap: 8px;
+  }
+}
+
+.og-clue-bubble::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  background: var(--c-surface);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.og-clue.pop .og-clue-bubble {
+  animation: bubble-in 0.5s var(--ease-spring) both;
+}
+
+.og-clue.pop .og-clue-avatar {
+  animation: clue-nod 0.6s var(--ease-spring) both;
+}
+
+@keyframes bubble-in {
+  0% {
+    transform: scale(0.2) rotate(-6deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06) rotate(1deg);
+    opacity: 1;
+  }
+}
+
+@keyframes clue-nod {
+  30% {
+    transform: translateY(-6px) rotate(-8deg);
+  }
+  60% {
+    transform: translateY(0) rotate(4deg);
+  }
+}
+
+/* Characters stay inline (so words never break apart); each one inks in. */
+.og-clue-text span {
+  opacity: 0;
+}
+
+.og-clue-text span.on {
+  opacity: 1;
+  animation: char-in 0.35s ease-out;
+}
+
+@keyframes char-in {
+  from {
+    opacity: 0;
+    color: var(--c-primary);
+  }
+  40% {
+    opacity: 1;
+    color: var(--c-primary);
+  }
+}
+
+/* Psychic: the clue box. */
+.og-clue-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.og-clue-field {
+  position: relative;
+  flex: 1 1 auto;
+}
+
+.og-clue-field input {
+  padding-right: 44px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 19px;
+}
+
+.og-clue-count {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--c-ink-faint);
+  pointer-events: none;
+}
+
+.og-clue-count.is-low {
+  color: var(--c-danger);
+}
+
+.og-send {
+  --btn-h: 52px;
+  width: 52px;
+  padding: 0;
+  flex: none;
+  margin-bottom: 4px;
+}
+
+.og-send svg {
+  width: 24px;
+  height: 24px;
+}
+
+.og-small-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+/* Someone else's move: avatar, name, and dots that dance while they type
+   (or while their needle moves). */
+.og-wait {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  min-height: 44px;
+}
+
+.og-wait-avatar {
+  display: inline-flex;
+}
+
+.og-wait.is-gone,
+.is-gone .og-wait {
+  color: var(--c-ink-soft);
+}
+
+.is-gone .og-wait-avatar {
+  filter: grayscale(0.9);
+  opacity: 0.6;
+}
+
+.og-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--c-surface);
+  box-shadow: var(--sh-1);
+}
+
+.is-gone .og-dots {
+  display: none;
+}
+
+.og-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-ink-faint);
+  animation: dots-idle 1.6s ease-in-out infinite;
+}
+
+.og-dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.og-dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.og-dots.is-on i {
+  background: var(--c-brand);
+  animation: dots-bounce 0.9s ease-in-out infinite;
+}
+
+.og-dots.is-on i:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.og-dots.is-on i:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+@keyframes dots-idle {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes dots-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Reveal: one word on how it went. */
+.og-result {
+  min-height: 1.25em;
+}
+
+.og-result-word {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 24px;
+}
+
+.og-result-word.p4 {
+  color: var(--c-band-4-text);
+}
+
+.og-result-word.p3 {
+  color: var(--c-band-3-text);
+}
+
+.og-result-word.p2 {
+  color: var(--c-ink);
+}
+
+.og-result-word.p0 {
+  color: var(--c-ink-soft);
+}
+
+/* Game over: Lobby (compact) and Rematch side by side, even on a phone. The
+   Rematch button's basis is its whole label, so where the two don't fit it
+   wraps onto its own full-width row rather than being cut to "Re…". */
+.og-panel .panel-actions .btn.og-lobby {
+  flex: 0 1 auto;
+  padding: 0 1.15em;
+}
+
+.panel-actions #online-rematch {
+  flex: 1 1 auto;
+  padding: 0 1.2em;
+}
+
+/* The narrowest phones: one full-width button per row, so the pair never
+   flips between one row and two as the label changes. */
+@media (max-width: 359px) {
+  .og-panel .panel-actions .btn.og-lobby,
+  .panel-actions #online-rematch {
+    flex-basis: 100%;
+  }
+}
+
+#online-rematch.is-waiting {
+  --btn-bg: var(--c-brand);
+  --btn-bg-hover: var(--c-brand);
+  --btn-ledge: var(--c-brand-ledge);
+  animation: rematch-wait 1.4s ease-in-out infinite;
+}
+
+#online-rematch.is-invited {
+  animation: rematch-wiggle 1.8s ease-in-out infinite;
+}
+
+@keyframes rematch-wait {
+  50% {
+    opacity: 0.75;
+  }
+}
+
+@keyframes rematch-wiggle {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0);
+  }
+  76% {
+    transform: rotate(-3deg) scale(1.03);
+  }
+  84% {
+    transform: rotate(3deg) scale(1.03);
+  }
+  92% {
+    transform: rotate(-1deg);
+  }
+}
+
+/* Short landscape phones: the final card sits in the stage column. */
+@media (orientation: landscape) and (max-height: 520px) {
+  /* The panel has its own column here, so a fixed height only wastes it. */
+  .og-panel:not([data-view='done']) {
+    min-height: 0;
+    justify-content: center;
+  }
+
+  .og-final {
+    padding: 14px 16px;
+  }
+
+  .og-final-score b {
+    font-size: 52px;
+  }
+
+  .og-pips {
+    margin-top: 10px;
+  }
+
+  .og-clue-bubble {
+    font-size: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .og-player.is-turn .og-avatar,
+  .cc-avatar,
+  .lobby-live-dot,
+  .og-dots i,
+  #online-rematch.is-invited,
+  #online-rematch.is-waiting {
+    animation: none !important;
+  }
+}

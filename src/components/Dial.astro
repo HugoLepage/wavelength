@@ -1,0 +1,212 @@
+---
+// One self-contained Wavelength dial: the half-circle device plus the
+// spectrum card underneath. Drive it with `new Dial(el)` from
+// src/scripts/dial.js. Several can share a page: nothing inside carries a
+// fixed id, and the few <defs> ids are suffixed with this dial's own `id`.
+//
+// Geometry (viewBox units): the pivot sits at (CX, CY); the face is a half
+// disc of radius R_FACE above it, ringed by a rim out to R_RIM with the scale
+// ticks on it; a short base runs below the pivot. dial.js reads the same
+// numbers from data-* attributes on the root, so the two never drift apart.
+import '../styles/dial.css';
+
+interface Props {
+  id: string;
+  left?: string;
+  right?: string;
+  class?: string;
+}
+const { id, left = '', right = '', class: cls = '' } = Astro.props;
+
+const W = 420;
+const H = 232;
+const CX = 210;
+const CY = 210;
+const R_RIM = 204;
+const R_FACE = 188;
+const R_BAND = 186;
+const BASE = 18; // how far the body runs below the pivot
+const BAND_DEG = 7.2; // scoring.js BAND (4 units) × 1.8°
+
+const f = (n: number) => Math.round(n * 100) / 100;
+// Polar → SVG point, angle in degrees clockwise from straight up.
+const pt = (r: number, deg: number) => {
+  const a = (deg * Math.PI) / 180;
+  return [f(CX + r * Math.sin(a)), f(CY - r * Math.cos(a))];
+};
+const wedge = (r: number, a1: number, a2: number) => {
+  const [x1, y1] = pt(r, a1);
+  const [x2, y2] = pt(r, a2);
+  return `M${CX} ${CY}L${x1} ${y1}A${r} ${r} 0 0 1 ${x2} ${y2}Z`;
+};
+
+// The body: a dome of radius R_RIM with a flat, round-cornered base.
+const bodyPath =
+  `M${CX - R_RIM} ${CY}A${R_RIM} ${R_RIM} 0 0 1 ${CX + R_RIM} ${CY}` +
+  `L${CX + R_RIM} ${CY + BASE - 9}Q${CX + R_RIM} ${CY + BASE} ${CX + R_RIM - 9} ${CY + BASE}` +
+  `L${CX - R_RIM + 9} ${CY + BASE}Q${CX - R_RIM} ${CY + BASE} ${CX - R_RIM} ${CY + BASE - 9}Z`;
+const faceHalf = `M${CX - R_FACE} ${CY}A${R_FACE} ${R_FACE} 0 0 1 ${CX + R_FACE} ${CY}Z`;
+// A thin highlight just inside the rim's outer edge.
+const rimHi = `M${CX - R_RIM + 3} ${CY}A${R_RIM - 3} ${R_RIM - 3} 0 0 1 ${CX + R_RIM - 3} ${CY}`;
+
+// Scale ticks on the rim, every 2 dial units; every 10th is long.
+const ticks = [];
+for (let v = 0; v <= 100; v += 2) {
+  const a = v * 1.8 - 90;
+  const major = v % 10 === 0;
+  const [x1, y1] = pt(major ? R_FACE + 3 : R_FACE + 4.5, a);
+  const [x2, y2] = pt(major ? R_RIM - 4 : R_RIM - 7, a);
+  ticks.push({ d: `M${x1} ${y1}L${x2} ${y2}`, major, mid: v === 50 });
+}
+
+// The wheel's own markings: concentric grooves and a ring of dots that
+// whirl past when it spins.
+const grooves = [];
+for (let r = 26; r < R_FACE - 6; r += 8) grooves.push(r);
+const dots = [];
+for (let a = 0; a < 360; a += 7.5) {
+  const [x, y] = pt(R_FACE - 9, a);
+  dots.push({ x, y, big: a % 45 === 0 });
+}
+
+// Five scoring bands, 2 · 3 · 4 · 3 · 2, centred on "up".
+const bands = [-2, -1, 0, 1, 2].map((k) => {
+  const pts = 4 - Math.abs(k);
+  const mid = k * BAND_DEG;
+  const [nx, ny] = pt(R_BAND - 30, mid);
+  return { k, pts, d: wedge(R_BAND, mid - BAND_DEG / 2, mid + BAND_DEG / 2), nx, ny, mid };
+});
+
+// Shutter decoration: radio-wave arcs about the pivot.
+const waves = [44, 78, 112, 146].map((r, i) => {
+  const span = 62 - i * 6;
+  const [x1, y1] = pt(r, -span);
+  const [x2, y2] = pt(r, span);
+  return `M${x1} ${y1}A${r} ${r} 0 0 1 ${x2} ${y2}`;
+});
+
+// The needle: a tapered blade from the pivot to just inside the rim, with a
+// round grab-knob part way along it.
+const TIP = CY - (R_FACE - 6);
+const needlePath = `M${CX - 6} ${CY}L${CX - 1.6} ${TIP + 5}Q${CX} ${TIP - 1} ${CX + 1.6} ${TIP + 5}L${CX + 6} ${CY}Z`;
+const KNOB_Y = CY - 144;
+
+const clipId = `dial-clip-${id}`;
+const shutterId = `dial-shutter-${id}`;
+const sheenId = `dial-sheen-${id}`;
+const shadeId = `dial-shade-${id}`;
+const blurId = `dial-blur-${id}`;
+---
+
+<div
+  class:list={['dial', cls]}
+  id={id}
+  data-dial
+  data-cx={CX}
+  data-cy={CY}
+  data-w={W}
+  data-h={H}
+  data-r={R_FACE}
+>
+  <div class="dial-body">
+    <svg
+      class="dial-svg"
+      viewBox={`0 0 ${W} ${H}`}
+      role="slider"
+      tabindex="-1"
+      aria-label="Needle"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="50"
+      aria-disabled="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <clipPath id={clipId}><path d={faceHalf} /></clipPath>
+        <linearGradient id={shutterId} x1="0" y1="0" x2="0" y2="1">
+          <stop class="dial-stop-sh1" offset="0" />
+          <stop class="dial-stop-sh2" offset="1" />
+        </linearGradient>
+        <radialGradient id={sheenId} cx={CX - 70} cy={CY - 150} r="170" gradientUnits="userSpaceOnUse">
+          <stop class="dial-stop-sheen" offset="0" stop-opacity="0.32" />
+          <stop class="dial-stop-sheen" offset="1" stop-opacity="0" />
+        </radialGradient>
+        <radialGradient id={shadeId} cx={CX} cy={CY} r={R_FACE} gradientUnits="userSpaceOnUse">
+          <stop class="dial-stop-shade" offset="0.8" stop-opacity="0" />
+          <stop class="dial-stop-shade" offset="1" stop-opacity="1" />
+        </radialGradient>
+        <filter id={blurId} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="2.4" />
+        </filter>
+      </defs>
+
+      <path class="dial-rim" d={bodyPath} />
+      <path class="dial-rim-hi" d={rimHi} />
+      <g class="dial-ticks">
+        {ticks.map((t) => <path d={t.d} class:list={[t.major && 'major', t.mid && 'mid']} />)}
+      </g>
+
+      <g clip-path={`url(#${clipId})`}>
+        <circle class="dial-face" cx={CX} cy={CY} r={R_FACE} />
+        <g class="dial-wheel" transform={`rotate(0 ${CX} ${CY})`}>
+          <g class="dial-grooves">
+            {grooves.map((r) => <circle cx={CX} cy={CY} r={r} />)}
+          </g>
+          <g class="dial-dots">
+            {dots.map((d) => <circle cx={d.x} cy={d.y} r={d.big ? 2.6 : 1.5} />)}
+          </g>
+          <g class="dial-ghosts"></g>
+          <g class="dial-bands">
+            {bands.map((b) => <path class={`dial-band p${b.pts}`} data-k={b.k} d={b.d} />)}
+          </g>
+          <g class="dial-glows">
+            {bands.map((b) => <path class="dial-glow" data-k={b.k} d={b.d} />)}
+          </g>
+          <g class="dial-nums">
+            {
+              bands.map((b) => (
+                <text class={`dial-num p${b.pts}`} data-k={b.k} data-x={b.nx} data-y={b.ny} x={b.nx} y={b.ny}>
+                  {b.pts}
+                </text>
+              ))
+            }
+          </g>
+        </g>
+        <circle class="dial-shade" cx={CX} cy={CY} r={R_FACE} fill={`url(#${shadeId})`} />
+        <g class="dial-shutter" transform={`rotate(0 ${CX} ${CY})`}>
+          <path class="dial-shutter-plate" d={faceHalf} fill={`url(#${shutterId})`} />
+          <path class="dial-shutter-sheen" d={faceHalf} fill={`url(#${sheenId})`} />
+          <g class="dial-waves">
+            {waves.map((d) => <path d={d} />)}
+          </g>
+          <rect class="dial-shutter-lip" x={CX - R_FACE} y={CY - 7} width={R_FACE * 2} height="7" rx="3.5" />
+        </g>
+      </g>
+
+      <g class="dial-needle-shadow" transform="translate(2.5 4.5)" filter={`url(#${blurId})`}>
+        <g class="dial-needle-rot" transform={`rotate(0 ${CX} ${CY})`}>
+          <path d={needlePath} />
+          <circle cx={CX} cy={KNOB_Y} r="12" />
+        </g>
+      </g>
+      <g class="dial-needle" transform={`rotate(0 ${CX} ${CY})`}>
+        <circle class="dial-knob-glow" cx={CX} cy={KNOB_Y} r="27" />
+        <path class="dial-needle-blade" d={needlePath} />
+        <circle class="dial-knob-ring" cx={CX} cy={KNOB_Y} r="18.5" />
+        <circle class="dial-knob" cx={CX} cy={KNOB_Y} r="12" />
+        <circle class="dial-knob-dot" cx={CX} cy={KNOB_Y} r="4" />
+      </g>
+      <circle class="dial-cap" cx={CX} cy={CY} r="18" />
+      <circle class="dial-cap-hi" cx={CX - 4} cy={CY - 5} r="7" />
+    </svg>
+    <div class="dial-bubble" aria-hidden="true"><span class="dial-bubble-text"></span></div>
+  </div>
+
+  <div class="dial-card">
+    <div class="dial-card-face">
+      <span class="dial-end dial-end-left"><span class="dial-end-text">{left}</span></span>
+      <span class="dial-bar" aria-hidden="true"></span>
+      <span class="dial-end dial-end-right"><span class="dial-end-text">{right}</span></span>
+    </div>
+  </div>
+</div>
