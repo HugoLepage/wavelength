@@ -1,11 +1,13 @@
 ---
 // The online game screen (one room): a header with the duo — both avatars
-// with presence dots, the shared score in between — and the round; the dial;
-// and a phase panel whose views swap with the room's phase and your role in
-// it (psychic, guesser or spectator). When the game is over the dial makes
-// way for the final score card. Driven by src/scripts/online-game.js.
+// with presence dots, the shared score in between (led by a chili when the
+// room deals spicy cards) — and the round; the dial; and a phase panel
+// whose views swap with the room's phase and your role in it (psychic,
+// guesser or spectator). When the game is over the dial makes way for the
+// final score card. Driven by src/scripts/online-game.js.
 import Dial from '../Dial.astro';
 import '../../styles/online.css';
+import { chiliSvg } from '../../scripts/chili.js';
 ---
 
 <section class="screen game-screen online-game" data-screen="online-game" aria-labelledby="online-title">
@@ -27,6 +29,7 @@ import '../../styles/online.css';
         <span class="og-name"></span>
       </span>
       <span class="og-score" id="online-score-chip" aria-label="Duo score">
+        <span class="og-spicy hidden" id="online-spicy" role="img" aria-label="Spicy cards" title="Spicy cards"><Fragment set:html={chiliSvg('chili is-lit')} /></span>
         <b class="og-score-num" id="online-score">0</b><small class="og-score-max" id="online-max"></small>
       </span>
       <span class="og-player is-right" id="online-slot-1">

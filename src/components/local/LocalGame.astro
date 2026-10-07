@@ -3,8 +3,8 @@
 // the dial, and one phase panel that always says who holds the device and
 // offers one big next step. local.js shows exactly one of the action buttons
 // per phase:
-//   handoff  #local-ready                  pass to the team's psychic
 //   psychic  #local-show → #local-handover (+ #local-peek, #local-newcard)
+//            the turn opens here: pass to the team's psychic, who shows the target
 //   guess    #local-lock                   the team turns the needle
 //   rival    #local-call-left / -right     the next team calls a side
 //   reveal   #local-next                   points fly, then on to the next team
@@ -30,7 +30,7 @@ import '../../styles/local.css';
     <Dial id="local-dial" />
   </div>
 
-  <div class="game-panel local-panel" id="local-panel" data-phase="handoff">
+  <div class="game-panel local-panel" id="local-panel" data-phase="psychic">
     <div class="local-who" id="local-who">
       <span class="local-who-badge" id="local-who-badge"></span>
       <span class="local-who-text">
@@ -41,11 +41,7 @@ import '../../styles/local.css';
     </div>
 
     <div class="panel-actions local-actions">
-      <button class="btn primary big" id="local-ready" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="3" fill="currentColor"></circle></svg>
-        <span class="btn-label">I'm the psychic</span>
-      </button>
-      <button class="btn primary big hidden" id="local-show" type="button">
+      <button class="btn primary big" id="local-show" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1.6" fill="currentColor"></circle></svg>
         <span class="btn-label">Show target</span>
       </button>

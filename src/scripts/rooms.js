@@ -10,13 +10,19 @@
 // node it runs on, so a needle streaming inside the room would make every
 // move from the other screen (a Leave above all) come back stale over and
 // over. watchLive follows it; watchRoom never sees it.
+//
+// A room deals from one deck for its whole life: `deck`, 'classic' or
+// 'spicy', fixed when the room is created (from the challenge, so both
+// players agreed to it) and never written again. Every draw comes from
+// deckList(room.deck), and room.used indexes into that deck.
 
 import { get, onDisconnect, onValue, ref, serverTimestamp, update } from 'firebase/database';
 import { db, dbRef, transact } from './firebase.js';
-import { SPECTRUMS } from './spectrums.js';
+import { deckList, resolveDeck } from './spectra.js';
 import { displayNameOf } from './auth.js';
 import {
-  EMPTY_LIVE, applyClue, applyGuess, applyLeave, applyNext, applyRedraw, createRoomState, drawCard, settleMove,
+  EMPTY_LIVE, applyClue, applyGuess, applyLeave, applyNext, applyRedraw, cleanDeck, createRoomState, drawCard,
+  settleMove,
 } from './room-logic.js';
 
 // The SDK throws on `undefined` anywhere in a value; a JSON round trip drops
@@ -106,6 +112,7 @@ export function normalizeRoom(r) {
     rounds,
     round: Math.min(num(r.round), Math.max(0, rounds - 1)),
     firstPsychic: seatOrNull(r.firstPsychic) ?? 0,
+    deck: cleanDeck(r.deck), // a room from before spicy mode has none: classic
     phase: PHASES.includes(r.phase) ? r.phase : 'clue',
     card: normalizeCard(r.card),
     used: toArray(r.used).filter((i) => typeof i === 'number'),
@@ -130,15 +137,18 @@ const signature = (room) => JSON.stringify({ ...room, live: null });
 // --- lifecycle --------------------------------------------------------------
 
 // `players`: [{ uname, name }, { uname, name }] (seat 0, seat 1).
-// `firstPsychic` (0 | 1) and `card` default to random ones.
+// `deck`: 'classic' (the default) or 'spicy', resolved here — a room only
+// ever turns out spicy when there are spicy cards to deal.
+// `firstPsychic` (0 | 1) and `card` (from that deck) default to random ones.
 // `extraUpdates` (multi-path entries, e.g. stats.js onlineStartEntries) land
 // in the same write as the room, so a room can never exist without them.
 // Resolves the id; rejects on bad input or when the write is refused.
-export async function createRoom({ id, players, rounds, firstPsychic, card, extraUpdates = {} }) {
+export async function createRoom({ id, players, rounds, firstPsychic, deck, card, extraUpdates = {} }) {
   if (!isValidRoomId(id)) throw new Error('createRoom: bad room id');
   const first = firstPsychic === 0 || firstPsychic === 1 ? firstPsychic : (Math.random() < 0.5 ? 0 : 1);
+  const d = resolveDeck(deck);
   const state = createRoomState({
-    id, players, rounds, firstPsychic: first, card: card || drawCard([], SPECTRUMS), now: Date.now(),
+    id, players, rounds, firstPsychic: first, deck: d, card: card || drawCard([], deckList(d)), now: Date.now(),
   });
   if (!state) throw new Error('createRoom: bad room settings');
   const { live, ...room } = state; // nobody has said anything on the live channel yet
@@ -233,11 +243,15 @@ export async function armLiveCleanup(id) {
 // --- moves --------------------------------------------------------------------
 
 // Run one pure transition against the server's copy of the room. The result
-// keeps every raw field the transition did not produce — `statsRecorded` and
-// `createdAt` above all — exactly as the server has them (a leftover `live`
-// child is dropped). Resolves { committed, room } (room = the server's
-// current room either way; not committed and no error = the move no longer
-// applies, e.g. the partner's Next landed first), or
+// keeps every raw field the transition did not produce — `statsRecorded`,
+// `createdAt` and `deck` above all — exactly as the server has them (a
+// leftover `live` child is dropped). No move ever writes `deck`: a room from
+// before spicy mode has none (normalizeRoom reads it as classic) and must
+// keep having none, since the rules refuse any change to it.
+//
+// Resolves { committed, room } (room = the server's current room either way;
+// not committed and no error = the move no longer applies, e.g. the
+// partner's Next landed first), or
 // { committed: false, room: null, error } when the database refused / failed.
 // Retries follow room-logic.js settleMove.
 async function move(id, apply) {
@@ -249,7 +263,7 @@ async function move(id, apply) {
         const next = room && apply(room);
         if (!next) return undefined;
         const { live: _leftover, ...base } = cur;
-        const { live, statsRecorded, createdAt, ...fields } = next;
+        const { live, statsRecorded, createdAt, deck, ...fields } = next;
         return clean({ ...base, ...fields });
       });
       return { committed: r.committed, room: normalizeRoom(r.snapshot.val()) };
@@ -262,7 +276,7 @@ async function move(id, apply) {
 
 // Psychic, clue phase: a different card and target.
 export const redrawCard = (id, seat) =>
-  move(id, (room) => applyRedraw(room, seat, drawCard(room.used, SPECTRUMS), Date.now()));
+  move(id, (room) => applyRedraw(room, seat, drawCard(room.used, deckList(room.deck)), Date.now()));
 
 // Psychic, clue phase: send the clue (trimmed, 1–60 characters) → guess phase.
 export const submitClue = (id, seat, clue) =>
@@ -274,7 +288,7 @@ export const lockGuess = (id, seat, guess) =>
 
 // Either player, reveal phase: next round with a fresh card, or the end.
 export const nextRound = (id, seat) =>
-  move(id, (room) => applyNext(room, seat, drawCard(room.used, SPECTRUMS), Date.now()));
+  move(id, (room) => applyNext(room, seat, drawCard(room.used, deckList(room.deck)), Date.now()));
 
 // Either player, any time while active: the game ends for both.
 export const leaveRoom = (id, seat) =>

@@ -6,7 +6,7 @@ import { initLocal } from './local.js';
 import { initOnline } from './online.js';
 
 export async function initApp() {
-  initUi(); // theme, toast, how-to overlay, top bar
+  initUi(); // theme, spicy mode (+ its notice), toast, how-to overlay, top bar
   initRouter(); // shows the home screen unless a ?session link is being joined
   initLocal(); // pass-and-play
   await initOnline(); // sign-in, lobby, challenges, ?session rooms

@@ -323,8 +323,9 @@
   color: var(--c-ink-soft);
 }
 
-/* The handoff wants the device to move: the badge bobs until someone takes it. */
-.local-panel[data-phase='handoff'] .local-who-badge .team-badge {
+/* A new turn wants the device to move to the team's psychic: the badge bobs
+   until they show the target (local.js sets .is-passing). */
+.local-panel.is-passing .local-who-badge .team-badge {
   animation: local-bob 1.8s ease-in-out infinite;
 }
 

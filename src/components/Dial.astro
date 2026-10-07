@@ -85,11 +85,18 @@ const waves = [44, 78, 112, 146].map((r, i) => {
   return `M${x1} ${y1}A${r} ${r} 0 0 1 ${x2} ${y2}`;
 });
 
-// The needle: a tapered blade from the pivot to just inside the rim, with a
-// round grab-knob part way along it.
+// The needle: a tapered blade from the pivot to just inside the rim, in the
+// accent (team) colour. It has no grab handle: a press anywhere on the face
+// swings it there (dial.js).
 const TIP = CY - (R_FACE - 6);
 const needlePath = `M${CX - 6} ${CY}L${CX - 1.6} ${TIP + 5}Q${CX} ${TIP - 1} ${CX + 1.6} ${TIP + 5}L${CX + 6} ${CY}Z`;
-const KNOB_Y = CY - 144;
+
+// Keyboard focus: a ring a few units outside the dome, down both sides of the
+// base. Its bottom stays open — the spectrum card tucks in right there.
+const FOCUS_R = R_RIM + 6;
+const focusPath =
+  `M${CX - FOCUS_R} ${CY + BASE - 9}L${CX - FOCUS_R} ${CY}` +
+  `A${FOCUS_R} ${FOCUS_R} 0 0 1 ${CX + FOCUS_R} ${CY}L${CX + FOCUS_R} ${CY + BASE - 9}`;
 
 const clipId = `dial-clip-${id}`;
 const shutterId = `dial-shutter-${id}`;
@@ -140,6 +147,7 @@ const blurId = `dial-blur-${id}`;
         </filter>
       </defs>
 
+      <path class="dial-focus" d={focusPath} />
       <path class="dial-rim" d={bodyPath} />
       <path class="dial-rim-hi" d={rimHi} />
       <g class="dial-ticks">
@@ -186,15 +194,10 @@ const blurId = `dial-blur-${id}`;
       <g class="dial-needle-shadow" transform="translate(2.5 4.5)" filter={`url(#${blurId})`}>
         <g class="dial-needle-rot" transform={`rotate(0 ${CX} ${CY})`}>
           <path d={needlePath} />
-          <circle cx={CX} cy={KNOB_Y} r="12" />
         </g>
       </g>
       <g class="dial-needle" transform={`rotate(0 ${CX} ${CY})`}>
-        <circle class="dial-knob-glow" cx={CX} cy={KNOB_Y} r="27" />
         <path class="dial-needle-blade" d={needlePath} />
-        <circle class="dial-knob-ring" cx={CX} cy={KNOB_Y} r="18.5" />
-        <circle class="dial-knob" cx={CX} cy={KNOB_Y} r="12" />
-        <circle class="dial-knob-dot" cx={CX} cy={KNOB_Y} r="4" />
       </g>
       <circle class="dial-cap" cx={CX} cy={CY} r="18" />
       <circle class="dial-cap-hi" cx={CX - 4} cy={CY - 5} r="7" />

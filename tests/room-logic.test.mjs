@@ -5,10 +5,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CLUE_MAX, MAX_ROUNDS, MIN_ROUNDS, applyClue, applyGuess, applyLeave, applyNext, applyRedraw,
-  clampRounds, cleanClue, createRoomState, drawCard, guesserOf, maxScore, psychicOf, seatOf, settleMove,
+  clampRounds, cleanClue, cleanDeck, createRoomState, drawCard, guesserOf, maxScore, psychicOf, seatOf, settleMove,
 } from '../src/scripts/room-logic.js';
 
-const SPECTRUMS = Array.from({ length: 30 }, (_, i) => ({ index: i, left: `L${i}`, right: `R${i}` }));
+const SPECTRA = Array.from({ length: 30 }, (_, i) => ({ index: i, left: `L${i}`, right: `R${i}` }));
+// A second, smaller deck (as spectra.js deckList('spicy') hands it out): its
+// indices overlap the classic ones, its texts do not.
+const SPICY_SPECTRA = Array.from({ length: 8 }, (_, i) => ({ index: i, left: `S${i}`, right: `T${i}` }));
 const PLAYERS = [{ uname: 'ana', name: 'Ana' }, { uname: 'bo', name: 'Bo' }];
 const T0 = 1_000;
 
@@ -74,6 +77,41 @@ test('createRoomState: a fresh room in round 1, clue phase', () => {
   assert.equal(r.live.typing, false);
   assert.deepEqual(r.players, PLAYERS);
   assert.notEqual(r.players, PLAYERS);
+  assert.equal(r.deck, 'classic'); // the default
+});
+
+test('createRoomState: the deck is classic or spicy, anything else is classic', () => {
+  assert.equal(newRoom({ deck: 'spicy' }).deck, 'spicy');
+  assert.equal(newRoom({ deck: 'classic' }).deck, 'classic');
+  for (const odd of [undefined, null, '', 'SPICY', 'hot', 1, true, {}]) {
+    assert.equal(newRoom({ deck: odd }).deck, 'classic', `deck ${JSON.stringify(odd)}`);
+    assert.equal(cleanDeck(odd), 'classic');
+  }
+  assert.equal(cleanDeck('spicy'), 'spicy');
+});
+
+test('the deck is carried, unchanged, through every transition', () => {
+  for (const deck of ['classic', 'spicy']) {
+    let r = newRoom({ deck, rounds: 3 });
+    let now = T0;
+    const seen = [r];
+    r = applyRedraw(r, psychicOf(r), card(3, 60), ++now);
+    seen.push(r);
+    for (let round = 0; round < 3; round++) {
+      r = applyClue(r, psychicOf(r), 'warm', ++now);
+      seen.push(r);
+      r = applyGuess(r, guesserOf(r), 50, ++now);
+      seen.push(r);
+      r = applyNext(r, round % 2, round < 2 ? card(round + 4, 30) : null, ++now);
+      seen.push(r);
+    }
+    assert.equal(r.status, 'finished');
+    seen.push(applyLeave(applyRedraw(newRoom({ deck }), 0, card(1), now), 1, now));
+    for (const room of seen) {
+      assert.ok(room);
+      assert.equal(room.deck, deck, `${deck} room at step ${room.step} (${room.phase})`);
+    }
+  }
 });
 
 test('createRoomState: bad settings → null', () => {
@@ -305,27 +343,51 @@ test('clampRounds keeps challenges within 3..12', () => {
 test('drawCard: never repeats a used card, fresh target in range', () => {
   const rng = rngFrom(42);
   const used = [];
-  for (let i = 0; i < SPECTRUMS.length; i++) {
-    const c = drawCard(used, SPECTRUMS, rng);
+  for (let i = 0; i < SPECTRA.length; i++) {
+    const c = drawCard(used, SPECTRA, rng);
     assert.ok(!used.includes(c.index), `card ${c.index} dealt twice`);
     assert.equal(c.left, `L${c.index}`);
     assert.equal(c.right, `R${c.index}`);
     assert.ok(c.target >= 3 && c.target <= 97);
     used.push(c.index);
   }
-  assert.deepEqual([...used].sort((a, b) => a - b), SPECTRUMS.map((s) => s.index));
+  assert.deepEqual([...used].sort((a, b) => a - b), SPECTRA.map((s) => s.index));
   // every card used: any card goes rather than failing
-  const extra = drawCard(used, SPECTRUMS, rng);
-  assert.ok(extra.index >= 0 && extra.index < SPECTRUMS.length);
+  const extra = drawCard(used, SPECTRA, rng);
+  assert.ok(extra.index >= 0 && extra.index < SPECTRA.length);
 });
 
 test('drawCard: picks from the only free card, accepts raw [left, right] pairs', () => {
-  const used = SPECTRUMS.map((s) => s.index).filter((i) => i !== 17);
-  for (let k = 0; k < 20; k++) assert.equal(drawCard(used, SPECTRUMS, Math.random).index, 17);
+  const used = SPECTRA.map((s) => s.index).filter((i) => i !== 17);
+  for (let k = 0; k < 20; k++) assert.equal(drawCard(used, SPECTRA, Math.random).index, 17);
   const pairs = [['Cold', 'Hot'], ['Soft', 'Hard'], ['Dull', 'Sharp']];
   const c = drawCard([0, 2], pairs, () => 0.999);
   assert.deepEqual([c.index, c.left, c.right], [1, 'Soft', 'Hard']);
   assert.throws(() => drawCard([], []));
+});
+
+test("drawCard over a room's own deck list: only that deck's cards, its indices in `used`", () => {
+  // A spicy room deals from deckList('spicy'): every card is a spicy one, and
+  // `used` (indices into the spicy deck) keeps them from repeating — classic
+  // cards with the same indices have nothing to do with it.
+  const rng = rngFrom(7);
+  let r = newRoom({ deck: 'spicy', rounds: MAX_ROUNDS, card: drawCard([], SPICY_SPECTRA, rng) });
+  assert.match(r.card.left, /^S\d$/);
+  r = applyRedraw(r, psychicOf(r), drawCard(r.used, SPICY_SPECTRA, rng), T0 + 1);
+  let now = T0 + 1;
+  while (r.used.length < SPICY_SPECTRA.length) {
+    r = applyClue(r, psychicOf(r), 'hm', ++now);
+    r = applyGuess(r, guesserOf(r), 50, ++now);
+    r = applyNext(r, 0, drawCard(r.used, SPICY_SPECTRA, rng), ++now);
+    assert.equal(r.deck, 'spicy');
+    assert.match(r.card.left, /^S\d$/, 'a spicy room never deals a classic card');
+    assert.equal(r.card.right, `T${r.card.index}`);
+  }
+  assert.deepEqual([...r.used].sort((a, b) => a - b), SPICY_SPECTRA.map((s) => s.index), 'each spicy card once');
+  // The same `used` over the classic list leaves the rest of the classic deck free.
+  const classic = drawCard(r.used, SPECTRA, rng);
+  assert.ok(classic.index >= SPICY_SPECTRA.length);
+  assert.match(classic.left, /^L\d+$/);
 });
 
 test('drawCard with random rngs over many games never deals a used card', () => {
@@ -333,7 +395,7 @@ test('drawCard with random rngs over many games never deals a used card', () => 
     const rng = rngFrom(seed);
     const used = [];
     for (let i = 0; i < 12; i++) {
-      const c = drawCard(used, SPECTRUMS, rng);
+      const c = drawCard(used, SPECTRA, rng);
       assert.ok(!used.includes(c.index));
       used.push(c.index);
     }

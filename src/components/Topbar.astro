@@ -1,8 +1,9 @@
 ---
 // The one-row top bar: wordmark (→ home), the online/sign-in button (driven
-// by online.js), how-to and theme buttons (ui.js). Fits a 320px phone: the
-// wordmark collapses to its glyph below 360px, or below 460px once a name is
-// shown, and a long signed-in name is cut short with an ellipsis.
+// by online.js), how-to, spicy-mode and theme buttons (ui.js). Fits a 320px
+// phone: the wordmark collapses to its glyph below 360px, or below 500px once
+// a name is shown, and a long signed-in name is cut short with an ellipsis.
+import { chiliSvg } from '../scripts/chili.js';
 ---
 
 <header class="topbar">
@@ -33,6 +34,11 @@
         <path d="M9.4 9.3a2.7 2.7 0 0 1 5.2 1c0 1.8-2.6 2.3-2.6 3.9"></path>
         <circle cx="12" cy="17.3" r="0.6" fill="currentColor"></circle>
       </svg>
+    </button>
+    <!-- Spicy mode (spicy.js, wired in ui.js): an outline chili while off; on,
+         <html data-spicy="on"> fills it red with a green stem (base.css). -->
+    <button class="btn icon ghost spicy-btn" id="btn-spicy" type="button" aria-label="Spicy mode" aria-pressed="false" title="Spicy mode: off">
+      <Fragment set:html={chiliSvg()} />
     </button>
     <button class="btn icon ghost" id="btn-theme" type="button" aria-label="Switch to dark theme">
       <svg class="theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

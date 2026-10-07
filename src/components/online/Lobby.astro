@@ -1,9 +1,11 @@
 ---
 // The online lobby: you (avatar, sign out, a four-number stats strip), who
 // else is online with a Challenge button each (plus how many rounds a
-// challenge asks for), and your recent games, each one a link back into its
-// room. Rendered by src/scripts/lobby.js.
+// challenge asks for — and a chili chip while spicy mode makes them spicy),
+// and your recent games, each one a link back into its room. Rendered by
+// src/scripts/lobby.js.
 import '../../styles/online.css';
+import { chiliSvg } from '../../scripts/chili.js';
 ---
 
 <section class="screen lobby-screen" data-screen="lobby" aria-labelledby="lobby-title">
@@ -45,6 +47,7 @@ import '../../styles/online.css';
           <span class="lobby-count" id="lobby-count"></span>
         </h2>
         <div class="lobby-rounds">
+          <span class="spicy-chip lobby-spicy hidden" id="lobby-spicy" title="Spicy mode is on: your challenges deal spicy cards"><Fragment set:html={chiliSvg('chili is-lit')} />Spicy</span>
           <span class="lobby-rounds-label" id="lobby-rounds-label">Rounds</span>
           <div class="stepper small-stepper" id="lobby-rounds" role="group" aria-labelledby="lobby-rounds-label">
             <button class="stepper-btn" type="button" data-step="-1" aria-label="Fewer rounds">−</button>

@@ -20,6 +20,8 @@ import { $, bindStepper, closeOverlay, escapeHtml, isOverlayOpen, openOverlay, t
 import { showScreen } from './router.js';
 import { countUp, popIn, reducedMotion, shake, sleep, stopCount } from './fx.js';
 import { avatarHtml } from './online-avatar.js';
+import { currentDeck, onSpicyChange } from './spicy.js';
+import { chiliSvg } from './chili.js';
 
 // How long the challenger waits for the room id after the challenge was
 // claimed (the acceptor is writing the room).
@@ -37,7 +39,7 @@ let players = []; // other online players, from presence
 let stats = { totals: normalizeTotals(null), partners: [] };
 let recent = [];
 let incoming = []; // fresh pending challenges addressed to me
-let outgoing = null; // { id, to, toName, rounds, unsub, timer, roomTimer, expiresAt }
+let outgoing = null; // { id, to, toName, rounds, spicy, unsub, timer, roomTimer, expiresAt }
 let sending = null; // { to, aborted } while a challenge is on its way out (holds the slot)
 let userUnsubs = [];
 let pruneTimer = null;
@@ -81,6 +83,7 @@ export async function initLobby(h) {
     statBulls: $('lobby-stat-bulls'),
     count: $('lobby-count'),
     rounds: $('lobby-rounds'),
+    spicy: $('lobby-spicy'),
     playerList: $('lobby-players'),
     playersEmpty: $('lobby-players-empty'),
     recentList: $('lobby-recent'),
@@ -130,8 +133,10 @@ export const outgoingTo = () => (outgoing ? outgoing.to : null);
 export const incomingFrom = (uname) => incoming.find((c) => c.from === uname) || null;
 
 // Send a challenge to `player` ({ uname, name }) for `rounds` rounds (the
-// lobby stepper's value by default). Used by the lobby rows and the game-over
-// Rematch button. Resolves true when a challenge is out (or theirs accepted).
+// lobby stepper's value by default), with spicy cards when spicy mode is on
+// right now (and there are spicy cards). Used by the lobby rows and the
+// game-over Rematch button. Resolves true when a challenge is out (or theirs
+// accepted — on their terms, deck included).
 export async function challengePlayer(player, rounds = roundsStepper ? roundsStepper.value : DEFAULT_ROUNDS) {
   const me = currentUser();
   if (!me || !player || player.uname === me.uname) return false;
@@ -145,6 +150,7 @@ export async function challengePlayer(player, rounds = roundsStepper ? roundsSte
   }
   if (outgoing || sending) return false;
   const n = clampRounds(rounds);
+  const spicy = currentDeck() === 'spicy';
   // Hold the slot while the challenge is written, so a second tap (on this
   // row or another) cannot send a second one.
   const s = { to: player.uname, aborted: false };
@@ -152,7 +158,7 @@ export async function challengePlayer(player, rounds = roundsStepper ? roundsSte
   renderPlayers();
   let id;
   try {
-    id = await sendChallenge({ from: me, to: player, rounds: n });
+    id = await sendChallenge({ from: me, to: player, rounds: n, spicy });
   } catch (err) {
     console.error(err);
     toast("Couldn't send the challenge");
@@ -167,7 +173,7 @@ export async function challengePlayer(player, rounds = roundsStepper ? roundsSte
     return false;
   }
   const o = {
-    id, to: player.uname, toName: player.name, rounds: n,
+    id, to: player.uname, toName: player.name, rounds: n, spicy,
     unsub: null, timer: null, roomTimer: null, expiresAt: Date.now() + CHALLENGE_TTL_MS,
   };
   outgoing = o;
@@ -216,7 +222,7 @@ export async function challengePlayer(player, rounds = roundsStepper ? roundsSte
         finish(null);
     }
   });
-  toast(`Challenge sent to ${player.name}`);
+  toast(`${spicy ? 'Spicy challenge' : 'Challenge'} sent to ${player.name}`);
   notifyOutgoing();
   renderPlayers();
   return true;
@@ -522,7 +528,8 @@ function renderPlayers() {
       status = `<small class="lp-status is-waiting">Waiting…<span class="lp-timer" style="--ttl:${left}ms"></span></small>`;
       action = `<button class="btn ghost small" type="button" data-action="cancel" data-uname="${uname}">Cancel</button>`;
     } else if (theirs) {
-      status = '<small class="lp-status is-incoming">Challenged you!</small>';
+      const chili = theirs.spicy ? `<span class="lp-spicy" title="Spicy cards">${chiliSvg('chili is-lit')}<span class="sr-only">, spicy</span></span>` : '';
+      status = `<small class="lp-status is-incoming">Challenged you!${chili}</small>`;
       action = `<button class="btn primary small" type="button" data-action="challenge" data-uname="${uname}">Play</button>`;
     } else {
       status = `<small class="lp-status${inGame ? ' is-busy' : ''}">${inGame ? 'In a game' : 'Ready'}</small>`;
@@ -545,6 +552,15 @@ function renderPlayers() {
     const btn = els.playerList.querySelector(`button${sel}`) || els.playerList.querySelector(`li${sel} button`);
     btn?.focus({ preventScroll: true });
   }
+}
+
+// The chili chip by the rounds stepper: while spicy mode is on (with spicy
+// cards to deal), every challenge sent from here is a spicy one.
+function renderSpicy({ animate = false } = {}) {
+  if (!els.spicy) return;
+  const on = currentDeck() === 'spicy';
+  els.spicy.classList.toggle('hidden', !on);
+  if (on && animate && document.body.dataset.screen === 'lobby') popIn(els.spicy);
 }
 
 const fmtAvg = (t) => (t.rounds > 0 ? (t.points / t.rounds).toFixed(1) : '–');
@@ -645,10 +661,12 @@ function renderChallengeCards() {
     card.className = 'challenge-card';
     card.dataset.id = ch.id;
     card.setAttribute('role', 'alertdialog');
-    card.setAttribute('aria-label', `${name} challenges you to ${ch.rounds} rounds`);
+    card.setAttribute('aria-label', `${name} challenges you to ${ch.rounds} rounds${ch.spicy ? ', with spicy cards' : ''}`);
+    // A spicy challenge says so before anyone accepts: the room keeps its deck.
+    const spicy = ch.spicy ? `<span class="spicy-chip cc-spicy">${chiliSvg('chili is-lit')}Spicy</span>` : '';
     card.innerHTML =
       `<span class="cc-avatar">${avatarHtml(ch.from, 46)}</span>` +
-      `<span class="cc-text"><b>${escapeHtml(name)}</b><small>wants to play · ${ch.rounds} rounds</small></span>` +
+      `<span class="cc-text"><b>${escapeHtml(name)}</b><small><span>wants to play · ${ch.rounds} rounds</span>${spicy}</small></span>` +
       '<span class="cc-actions">' +
       '<button class="btn icon ghost small" type="button" data-action="decline" aria-label="Decline">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>' +
@@ -777,6 +795,8 @@ function bind() {
     value: Number.isFinite(stored) && stored ? clampRounds(stored) : DEFAULT_ROUNDS,
     onChange: (v) => writeStored(ROUNDS_KEY, String(v)),
   });
+  renderSpicy();
+  onSpicyChange(() => renderSpicy({ animate: true }));
 
   els.playerList.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-action]');

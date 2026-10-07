@@ -37,6 +37,8 @@ import {
   challengePlayer, hasOutgoingChallenge, incomingFrom, initLobby, openLobby, outgoingTo, requireLogin,
 } from './lobby.js';
 import { avatarColor, avatarHtml } from './online-avatar.js';
+import { hasSpicy } from './spectra.js';
+import { onSpicyChange } from './spicy.js';
 
 const NEEDLE_EVERY_MS = 100; // live needle throttle (~10 writes a second)
 const TYPING_IDLE_MS = 2500; // typing dots stop this long after the last key
@@ -272,8 +274,9 @@ function joinFromUrl(roomId) {
 }
 
 // Create the room for an accepted challenge: random seats (and a random
-// first psychic and card, chosen by createRoom), both players' match records
-// in the same write. Resolves the room id.
+// first psychic and card, chosen by createRoom), the challenge's deck — the
+// challenger's spicy mode, never ours — and both players' match records in
+// the same write. Resolves the room id.
 async function acceptChallenge(ch) {
   const me = currentUser();
   if (!me) throw new Error('signed out');
@@ -281,7 +284,10 @@ async function acceptChallenge(ch) {
   const mine = { uname: me.uname, name: me.name };
   const players = Math.random() < 0.5 ? [challenger, mine] : [mine, challenger];
   const id = newRoomId();
-  await createRoom({ id, players, rounds: ch.rounds, extraUpdates: onlineStartEntries(id, players, ch.rounds) });
+  await createRoom({
+    id, players, rounds: ch.rounds, deck: ch.spicy ? 'spicy' : 'classic',
+    extraUpdates: onlineStartEntries(id, players, ch.rounds),
+  });
   return id;
 }
 
@@ -712,6 +718,7 @@ function renderHeader(room) {
   });
   renderPresence();
   els.max.textContent = `/${maxScore(room)}`;
+  els.spicy.classList.toggle('hidden', room.deck !== 'spicy');
   const seatedActive = o.seat !== null && !isFinished(room);
   els.leave.classList.toggle('hidden', !seatedActive);
   els.exit.classList.toggle('hidden', seatedActive);
@@ -1269,6 +1276,7 @@ function resetView() {
   updateCount();
   setScore(0); // also stops a count still rolling from the last room
   els.max.textContent = '';
+  els.spicy.classList.add('hidden');
   els.roundNum.textContent = '1';
   els.roundTotal.textContent = '–';
   for (const el of els.slots) {
@@ -1293,6 +1301,7 @@ function cacheDom() {
     scoreChip: $('online-score-chip'),
     score: $('online-score'),
     max: $('online-max'),
+    spicy: $('online-spicy'),
     round: $('online-round'),
     roundNum: $('online-round-num'),
     roundTotal: $('online-round-total'),
@@ -1344,6 +1353,15 @@ function bindGame() {
   els.lobby.addEventListener('click', goBackOut);
   els.exit.addEventListener('click', goBackOut);
   armConfirm(els.leave, 'Leave?', leave);
+
+  // The room's deck was fixed when it was made: the top bar's chili only
+  // changes what the next challenge deals (and with no spicy cards to deal,
+  // nothing at all — as in pass & play).
+  onSpicyChange((on) => {
+    if (hasSpicy && online && currentScreen() === 'online-game') {
+      toast(on ? 'Spicy mode applies to new games' : 'Spicy mode off for new games', { underBar: true });
+    }
+  });
 
   dial.onInput(onNeedle);
   dial.onChange(onNeedle);

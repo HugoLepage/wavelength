@@ -6,29 +6,34 @@
 // reload (or the exit button) never loses it — Home offers Resume.
 //
 // Every phase says who should be holding the device (the team's badge and
-// colour, also on the needle's knob) and offers one big next step. The secret
-// target is only ever on show while the psychic holds the device: every
-// entry into the game screen starts from a closed shutter, "Hand over" closes
-// it before the team gets the dial, and the wheel is only set to a target by
-// the psychic's own spin or by the reveal.
+// colour, also on the needle) and offers one big next step. A turn opens on
+// the pass to the team's psychic, whose one step is "Show target" — no
+// separate "it's me" tap. The secret target is only ever on show while the
+// psychic holds the device: every entry into the game screen starts from a
+// closed shutter, "Hand over" closes it before the team gets the dial, and the
+// wheel is only set to a target by the psychic's own spin or by the reveal.
+//
+// Each card comes from the deck the top bar's chili has on when it is dealt
+// (spicy mode), so the chili can be flipped mid-game: see onSpicy.
 
-import { $ } from './ui.js';
+import { $, toast } from './ui.js';
 import { currentScreen, onScreenChange, showScreen } from './router.js';
 import { Dial } from './dial.js';
 import { confettiFrom, countUp, flyPoints, popIn, pulse, reducedMotion, shake, sleep } from './fx.js';
 import { RESULT_WORDS } from './scoring.js';
-import { shuffledDeck, spectrumAt } from './spectrums.js';
+import { hasSpicy, shuffledDeck, spectrumAt } from './spectra.js';
+import { currentDeck, onSpicyChange } from './spicy.js';
 import { teamBadgeHtml } from './teams.js';
 import {
-  activeTeam, beginPsychic, callSide, createGame, handOver, holderOf, inProgress, isLastTurn, lockIn,
-  moveNeedle, nextTeamOf, nextTurn, normalizeGame, redraw, rematch,
+  activeTeam, callSide, createGame, handOver, holderOf, inProgress, isLastTurn, lockIn, moveNeedle,
+  nextTeamOf, nextTurn, normalizeGame, redraw, rematch, showTarget, switchDeck, targetSeen,
 } from './local-logic.js';
 import { initSetup, openSetup } from './local-setup.js';
 import { cancelResults, showResults } from './local-results.js';
 
 const STORAGE_KEY = 'wavelength.local';
 
-const PANEL_BUTTONS = ['local-ready', 'local-show', 'local-handover', 'local-lock', 'local-call-left', 'local-call-right', 'local-next'];
+const PANEL_BUTTONS = ['local-show', 'local-handover', 'local-lock', 'local-call-left', 'local-call-right', 'local-next'];
 
 // Small role marks pinned to the holder's badge.
 const ROLE_SVG = {
@@ -58,13 +63,18 @@ let armedAt = 0; // a just-shown main button ignores taps until then
 
 // A new main button appears where the last one was, right under the finger
 // that pressed it, so the second tap of a double tap would press it too:
-// lock in at 50, make the rival's call for them, skip the handoff, wipe the
-// results. Each new one ignores taps for about as long as it springs in.
+// show the next team's target to whoever tapped Next (or Start, Resume, Play
+// again), lock in at 50, make the rival's call for them, wipe the results.
+// Each new one ignores taps for about as long as it springs in.
 const SETTLE_MS = 450;
 const arm = (ms = SETTLE_MS) => {
   armedAt = performance.now() + ms;
 };
 const settling = () => performance.now() < armedAt;
+
+// Where the next card comes from: the deck the top bar's chili has on at the
+// moment it is dealt (spicy mode, spicy.js).
+const dealer = () => ({ deck: currentDeck(), spectrumAt, shuffledDeck });
 
 // --- storage ----------------------------------------------------------------------
 
@@ -206,7 +216,7 @@ function scrollChipIntoView(i) {
 // --- phase panel -------------------------------------------------------------------------------
 
 function roleOf(phase) {
-  if (phase === 'handoff' || phase === 'psychic') return 'psychic';
+  if (phase === 'psychic') return 'psychic';
   if (phase === 'rival') return 'rival';
   if (phase === 'reveal') return 'result';
   return 'team';
@@ -214,10 +224,10 @@ function roleOf(phase) {
 
 function lineFor(phase) {
   switch (phase) {
-    case 'handoff':
-      return 'Pass the device to your psychic';
     case 'psychic':
-      if (!spun) return 'Psychic only — no peeking, team!';
+      // Before the first look the turn is still changing hands: the strip
+      // names the team, and only its psychic should tap Show target.
+      if (!spun) return 'Pass the device to your psychic';
       return shown ? 'Think of a clue…' : 'Say your clue, then hand over';
     case 'guess':
       return 'Turn the dial to the clue';
@@ -232,8 +242,6 @@ function lineFor(phase) {
 
 function buttonsFor(phase) {
   switch (phase) {
-    case 'handoff':
-      return ['local-ready'];
     case 'psychic':
       return [spun ? 'local-handover' : 'local-show'];
     case 'guess':
@@ -277,6 +285,8 @@ function renderPanel({ animate = false } = {}) {
   const key = `${phase}:${holder}:${spun}:${revealing}`;
   panel.dataset.phase = phase;
   panel.dataset.key = key;
+  // The pass to the psychic: the device should be on the move (local.css).
+  panel.classList.toggle('is-passing', phase === 'psychic' && !spun);
 
   who.style.setProperty('--team', team.color);
   // Keyed on the team's identity, not just its seat: a new game can put a
@@ -348,6 +358,9 @@ function renderPanel({ animate = false } = {}) {
 function enterGame() {
   if (!game) return;
   if (game.phase === 'done') return openResults();
+  // The chili may have changed where this game was not listening (in another
+  // tab before a reload): a card whose target nobody has seen follows it.
+  commit(switchDeck(game, dealer()));
   token++;
   busy = false;
   focusBack = null;
@@ -388,16 +401,11 @@ function leaveGame() {
 
 // --- phase actions ----------------------------------------------------------------------------------
 
-function onReady() {
-  if (busy || settling() || !commit(beginPsychic(game))) return;
-  spun = false;
-  shown = false;
-  renderPanel({ animate: true });
-}
-
-// The first look: the shutter swings away while the wheel whirls in.
+// The first look: the shutter swings away while the wheel whirls in. This is
+// the button the previous turn's Next (or Start, Resume, Play again) leaves
+// under the finger, so it settles before it takes a tap.
 async function onShow() {
-  if (busy || settling() || game.phase !== 'psychic') return;
+  if (busy || settling() || spun || !commit(showTarget(game))) return;
   const t = token;
   busy = true;
   spun = true;
@@ -418,7 +426,7 @@ function onPeek() {
 }
 
 async function onNewCard() {
-  if (busy || !commit(redraw(game, spectrumAt))) return;
+  if (busy || !commit(redraw(game, dealer()))) return;
   const t = token;
   busy = true;
   if (spun) shown = true;
@@ -547,10 +555,11 @@ async function playReveal({ celebrate }) {
 
 // After the reveal: the next team's turn on the same screen, or the results.
 // The shutter closes over the old (already public) target while the new card
-// flips in; the handoff is usable as soon as its button has settled — a
-// quick "Show target" simply takes over the shutter mid-swing.
+// flips in, and the panel asks for the pass to that team's psychic. Show
+// target is usable as soon as it has settled — a quick tap simply takes over
+// the shutter mid-swing.
 function onNext() {
-  if (busy || settling() || !commit(nextTurn(game, spectrumAt))) return;
+  if (busy || settling() || !commit(nextTurn(game, dealer()))) return;
   if (game.phase === 'done') return openResults();
   spun = false;
   shown = false;
@@ -566,6 +575,25 @@ function onNext() {
   pulse(chipEl(game.turn));
 }
 
+// --- spicy mode -------------------------------------------------------------------------------------------
+
+// The chili was flipped mid-game. A card whose target nobody has seen yet is
+// simply dealt again from the new deck: flipped over on screen, or quietly in
+// the saved game that waits for Resume. Once the psychic has looked, the turn
+// keeps its card and the change starts with the next one, as the players are
+// told. With no spicy cards to deal, nothing changes at all.
+function onSpicy(on) {
+  if (!hasSpicy || !inProgress(game)) return;
+  const here = currentScreen() === 'local-game';
+  if (targetSeen(game)) {
+    // Past the last psychic, the next card is the next game's.
+    const later = game.phase !== 'psychic' && isLastTurn(game) ? 'game' : 'card';
+    if (here) toast(`${on ? 'Spicy' : 'Classic'} cards from the next ${later}`, { underBar: true });
+    return;
+  }
+  if (commit(switchDeck(game, dealer())) && here) dial.setSpectrum(game.card.left, game.card.right);
+}
+
 // --- setup and results ----------------------------------------------------------------------------------
 
 function openSetupScreen() {
@@ -577,7 +605,7 @@ function openSetupScreen() {
 }
 
 function startGame({ teams, rounds, rival }) {
-  if (!commit(createGame({ teams, rounds, rival, deck: shuffledDeck(), spectrumAt }))) return;
+  if (!commit(createGame({ teams, rounds, rival, dealer: dealer() }))) return;
   enterGame();
 }
 
@@ -591,7 +619,7 @@ function openResults() {
 }
 
 function playAgain() {
-  if (settling() || !commit(rematch(game, spectrumAt))) return;
+  if (settling() || !commit(rematch(game, dealer()))) return;
   enterGame();
 }
 
@@ -612,7 +640,6 @@ export function initLocal() {
   });
 
   $('local-exit').addEventListener('click', () => showScreen('home', { direction: 'back' }));
-  $('local-ready').addEventListener('click', onReady);
   $('local-show').addEventListener('click', onShow);
   $('local-peek').addEventListener('click', onPeek);
   $('local-newcard').addEventListener('click', onNewCard);
@@ -644,5 +671,6 @@ export function initLocal() {
     if (prev === 'local-results' && name !== 'local-results') cancelResults();
     if (name === 'home') refreshResume();
   });
+  onSpicyChange(onSpicy);
   refreshResume();
 }

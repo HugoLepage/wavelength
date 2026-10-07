@@ -129,6 +129,10 @@ export class Dial {
     this.svg.addEventListener('lostpointercapture', this._onUp);
     this.svg.addEventListener('keydown', this._onKey);
     this.svg.addEventListener('keyup', this._onKeyUp);
+    // The focus ring is for keyboard players: a press focuses the dial from
+    // script (_onDown), which browsers count as focus-visible, so .is-pointer
+    // hides the ring until a key is used on the dial or focus leaves it.
+    this.svg.addEventListener('blur', () => this.root.classList.remove('is-pointer'));
 
     const l = this.el.left.textContent.trim();
     const r = this.el.right.textContent.trim();
@@ -727,7 +731,7 @@ export class Dial {
       /* synthetic events cannot be captured; dragging still works inside */
     }
     this._drag = { id: e.pointerId, rect };
-    this.root.classList.add('is-dragging');
+    this.root.classList.add('is-dragging', 'is-pointer');
     this.svg.focus({ preventScroll: true });
     this._moveTo(this._valueAt(e, rect));
   }
@@ -759,6 +763,7 @@ export class Dial {
     // Alt/Ctrl/Cmd combos stay with the browser (Alt+← is Back, Ctrl+End scrolls…);
     // Shift is ours: the ×5 step.
     if (!this._interactive || e.altKey || e.ctrlKey || e.metaKey) return;
+    this.root.classList.remove('is-pointer'); // keyboard in use: the ring shows
     const step = e.shiftKey ? 5 : 1;
     let v = this._value;
     switch (e.key) {

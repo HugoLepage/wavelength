@@ -1,5 +1,6 @@
 // Challenges live under /challenges/<challenged player>/<id>. The challenger
-// writes one (with the number of rounds to play), the challenged player
+// writes one (with the number of rounds to play, and whether the cards are
+// spicy — the challenger's spicy mode when sending), the challenged player
 // answers by updating its status, and the challenger watches that status to
 // learn the outcome — on 'accepted' the acceptor adds the new room's id.
 
@@ -33,8 +34,9 @@ export function challengeRef(to, id) {
 // Returns the new challenge id. A challenger whose tab dies leaves nothing
 // behind: the server removes the node when the connection drops (the
 // challenger's terminal-status handling removes it in every other case).
-// `from` / `to`: { uname, name }; `rounds` is clamped to 3..12.
-export async function sendChallenge({ from, to, rounds }) {
+// `from` / `to`: { uname, name }; `rounds` is clamped to 3..12; `spicy`:
+// deal spicy cards (the room made from it keeps that deck for good).
+export async function sendChallenge({ from, to, rounds, spicy = false }) {
   trackServerTime();
   const chRef = push(dbRef('challenges', to.uname));
   await onDisconnect(chRef).remove();
@@ -45,6 +47,7 @@ export async function sendChallenge({ from, to, rounds }) {
     to: to.uname,
     toName: to.name,
     rounds: clampRounds(rounds),
+    spicy: spicy === true,
     status: 'pending',
     createdAt: serverTimestamp(),
   });
@@ -85,7 +88,8 @@ const isChallengeLitter = (ch) =>
   !!ch && typeof ch.createdAt === 'number' && serverNow() - ch.createdAt > 2 * CHALLENGE_TTL_MS;
 
 // cb receives the list of fresh pending challenges addressed to `me` (oldest
-// first), each { id, from, fromName, to, toName, rounds, status, createdAt }.
+// first), each { id, from, fromName, to, toName, rounds, spicy, status,
+// createdAt } — spicy false for a challenge from before spicy mode.
 // The names are checked (anyone can write a challenge): the accepted one's
 // fromName goes on into the room and both players' records.
 export function watchIncoming(me, cb) {
@@ -99,6 +103,7 @@ export function watchIncoming(me, cb) {
           ...ch,
           id: child.key,
           rounds: clampRounds(ch.rounds),
+          spicy: ch.spicy === true,
           fromName: displayNameOf(ch.fromName, ch.from),
           toName: displayNameOf(ch.toName, ch.to),
         });

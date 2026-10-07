@@ -1,5 +1,6 @@
 /* The dial (Dial.astro + dial.js): the half-circle device and its spectrum
-   card. Colours come from the --dial-* and --c-band-* tokens in base.css.
+   card. Colours come from the --dial-*, --c-band-* and --c-focus tokens in
+   base.css; the needle wears --dial-accent, which dial.js sets per player.
 
    Sizing: the dial is as wide as its container allows, up to --dial-max
    (560px), but never taller than the viewport minus --dial-reserve — the
@@ -197,70 +198,42 @@
   fill: var(--dial-needle-shadow);
 }
 
+/* One clean blade in the accent (team) colour: the white edge keeps it crisp
+   over the shutter's blue and the bands alike. */
 .dial-needle-blade {
-  fill: var(--dial-needle);
+  fill: var(--dial-accent);
   stroke: var(--dial-needle-edge);
-  stroke-width: 1.6;
+  stroke-width: 2.2;
   stroke-linejoin: round;
   paint-order: stroke;
-}
-
-.dial-knob {
-  fill: var(--dial-accent);
-  stroke: var(--dial-knob-edge);
-  stroke-width: 3.5;
   transition: fill 0.3s ease;
 }
 
-.dial-knob-dot {
-  fill: var(--dial-knob-edge);
-}
-
-.dial-knob-glow {
-  fill: var(--dial-accent);
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: opacity 0.25s ease, fill 0.3s ease;
-}
-
-.dial-knob-ring {
-  fill: none;
-  stroke: var(--dial-accent);
-  stroke-width: 3;
-  opacity: 0;
-}
-
-.dial.is-interactive .dial-knob-glow {
-  opacity: 0.22;
-  animation: knob-breathe 2.2s ease-in-out infinite;
-}
-
-.dial.is-dragging .dial-knob-glow {
-  opacity: 0.34;
-  animation: none;
-  scale: 1.12;
-}
-
-/* Only a dial that takes input shows the keyboard ring. */
-.dial.is-interactive .dial-svg:focus-visible .dial-knob-ring {
-  opacity: 1;
-}
-
-@keyframes knob-breathe {
-  0%,
-  100% {
-    scale: 0.82;
-  }
-  50% {
-    scale: 1.08;
-  }
-}
-
 .dial-cap {
-  fill: var(--dial-needle);
+  fill: var(--dial-accent);
   stroke: var(--dial-needle-edge);
   stroke-width: 2.5;
+  transition: fill 0.3s ease;
+}
+
+/* Keyboard focus: the svg's own outline would be a box round the whole
+   viewBox, so the ring in Dial.astro hugs the dome instead — in the app's
+   focus colour and width (base.css), whatever size the dial is drawn at.
+   Only a dial that takes input shows it, and not after a press (.is-pointer,
+   dial.js): pressing focuses the dial from script, which counts as visible. */
+.dial-focus {
+  fill: none;
+  stroke: var(--c-focus);
+  stroke-width: 3px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dial.is-interactive:not(.is-pointer) .dial-svg:focus-visible .dial-focus {
+  opacity: 1;
 }
 
 .dial-cap-hi {

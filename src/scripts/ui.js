@@ -1,8 +1,12 @@
-// Shared chrome and small UI helpers: the top bar buttons, the toast, the
-// overlay (modal) stack, "tap twice to confirm" buttons and the − value +
-// stepper. Screens import from here rather than each growing their own.
+// Shared chrome and small UI helpers: the top bar buttons (theme, spicy mode
+// and its one-time notice, how-to), the toast, the overlay (modal) stack,
+// "tap twice to confirm" buttons and the − value + stepper. Screens import
+// from here rather than each growing their own.
 
 import { initTheme, toggleTheme, resolvedTheme } from './theme.js';
+import {
+  acknowledgeSpicy, initSpicy, isSpicy, onSpicyChange, setSpicy, spicyAcknowledged,
+} from './spicy.js';
 import { showScreen } from './router.js';
 import { popIn, reducedMotion } from './fx.js';
 
@@ -15,11 +19,18 @@ export const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => HTML
 
 let toastTimer = null;
 
-export function toast(message, ms = 2600) {
+// toast(message), toast(message, ms) or toast(message, { ms, underBar }).
+// underBar is for feedback on a top-bar control (the chili): in a game, where
+// toasts drop in over the top bar, it starts the toast just below the bar so
+// the control it reports on stays in sight. Set on every call, so the next
+// plain toast goes back to the usual place.
+export function toast(message, opts = {}) {
+  const { ms = 2600, underBar = false } = typeof opts === 'number' ? { ms: opts } : opts;
   const el = $('toast');
   if (!el) return;
   el.textContent = message;
   el.classList.remove('show');
+  el.classList.toggle('under-bar', underBar);
   void el.offsetWidth; // restart the slide-in when a toast replaces a toast
   el.classList.add('show');
   clearTimeout(toastTimer);
@@ -268,10 +279,60 @@ function syncThemeButton() {
   btn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
 }
 
+// The chili is a state, not an action (it shows the mode, lit or not), so a
+// fixed label and aria-pressed. Its colours follow <html data-spicy> (CSS).
+function syncSpicyButton() {
+  const btn = $('btn-spicy');
+  if (!btn) return;
+  const on = isSpicy();
+  btn.setAttribute('aria-pressed', String(on));
+  btn.title = `Spicy mode: ${on ? 'on' : 'off'}`;
+}
+
+// Switched on: the chili pops and wiggles (once the notice, if any, is gone).
+function popChili(delay = 0) {
+  const btn = $('btn-spicy');
+  if (!btn || reducedMotion()) return;
+  setTimeout(() => {
+    btn.classList.remove('is-popping');
+    void btn.offsetWidth; // restart it on a quick off → on
+    btn.classList.add('is-popping');
+  }, delay);
+}
+
+// Off → on asks the grown-ups question the first time in this browser; on →
+// off never asks.
+function bindSpicy() {
+  const btn = $('btn-spicy');
+  const notice = $('spicy-overlay');
+  if (!btn) return;
+  onSpicyChange(syncSpicyButton);
+  btn.addEventListener('animationend', () => btn.classList.remove('is-popping'));
+  btn.addEventListener('click', () => {
+    if (isSpicy()) {
+      setSpicy(false);
+    } else if (spicyAcknowledged() || !notice) {
+      setSpicy(true);
+      popChili();
+    } else {
+      openOverlay(notice);
+    }
+  });
+  $('spicy-confirm')?.addEventListener('click', () => {
+    acknowledgeSpicy();
+    closeOverlay(notice);
+    setSpicy(true);
+    popChili(180); // as the notice's close animation ends (closeOverlay)
+  });
+}
+
 export function initUi() {
   initTheme(syncThemeButton);
   syncThemeButton();
+  initSpicy();
+  syncSpicyButton();
   bindOverlays();
+  bindSpicy();
 
   $('btn-theme')?.addEventListener('click', () => {
     document.documentElement.classList.add('theme-switching');

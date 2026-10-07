@@ -1,6 +1,7 @@
 ---
-// The one page shell: meta, fonts, favicon, global styles, and the two tiny
-// pre-paint scripts (theme + ?session) that must run before anything shows.
+// The one page shell: meta, fonts, favicon, global styles, and the tiny
+// pre-paint scripts (?session, theme, spicy mode) that must run before
+// anything shows.
 import '../styles/base.css';
 
 interface Props {
@@ -55,6 +56,21 @@ const base = import.meta.env.BASE_URL.endsWith('/')
         document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
         var meta = document.querySelector('meta[name="theme-color"]');
         if (meta) meta.setAttribute('content', dark ? '#0f1222' : '#f5f1ea');
+      })();
+    </script>
+    <!-- Spicy mode, likewise: the chili in the top bar is coloured from
+         <html data-spicy>, so it is stamped before first paint and a spicy
+         player never sees the outline flash red. The storage key is repeated
+         from src/scripts/spicy.js; keep the two in sync. -->
+    <script is:inline>
+      (function () {
+        var spicy = null;
+        try {
+          spicy = localStorage.getItem('wavelength.spicy');
+        } catch (e) {
+          /* private mode: off */
+        }
+        document.documentElement.setAttribute('data-spicy', spicy === '1' ? 'on' : 'off');
       })();
     </script>
   </head>

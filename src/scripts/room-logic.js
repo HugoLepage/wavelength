@@ -5,13 +5,13 @@
 // each transition inside a database transaction, so the same checks guard
 // against stale clicks and two tabs racing each other.
 //
-// Kept free of the database and of the spectrum list (which Vite imports as
+// Kept free of the database and of the card lists (which Vite imports as
 // JSON) so it runs in plain Node for the tests: cards are passed in, and so
 // are the database calls of settleMove (how rooms.js retries a move).
 //
 // Room shape (also what normalizeRoom returns):
 //   { id, status: 'active'|'finished', step, players: [{uname,name}] ×2,
-//     rounds, round (0-based), firstPsychic: 0|1,
+//     rounds, round (0-based), firstPsychic: 0|1, deck: 'classic'|'spicy',
 //     phase: 'clue'|'guess'|'reveal'|'done',
 //     card: { index, left, right, target }, used: [card indices dealt],
 //     clue, guess, points, score, history: [{ left, right, target, clue,
@@ -54,10 +54,16 @@ export const maxScore = (room) => (room ? room.rounds * MAX_POINTS : 0);
 
 // --- cards -------------------------------------------------------------------
 
-// `spectrums` is the card list: [{ index, left, right }] (SPECTRUMS) or raw
-// [left, right] pairs whose position is the index.
-function cardAt(spectrums, i) {
-  const s = spectrums[i];
+// The room's deck is chosen once, when the room is created (the challenge
+// says which), and never changes: both players agreed to it. `card.index` and
+// `used` are indices into that deck's list (spectra.js deckList). Anything
+// but 'spicy' is the classic deck.
+export const cleanDeck = (deck) => (deck === 'spicy' ? 'spicy' : 'classic');
+
+// `spectra` is one deck's card list: [{ index, left, right }] (spectra.js
+// deckList) or raw [left, right] pairs whose position is the index.
+function cardAt(spectra, i) {
+  const s = spectra[i];
   if (Array.isArray(s)) return { index: i, left: s[0], right: s[1] };
   return { index: s.index ?? i, left: s.left, right: s.right };
 }
@@ -65,16 +71,16 @@ function cardAt(spectrums, i) {
 // A random card that has not been dealt in this room yet, with a fresh
 // target. When every card has been used (never, with a full deck) any card
 // goes.
-export function drawCard(used = [], spectrums = [], rng = Math.random) {
-  if (!spectrums.length) throw new Error('drawCard: empty spectrum list');
+export function drawCard(used = [], spectra = [], rng = Math.random) {
+  if (!spectra.length) throw new Error('drawCard: empty card list');
   const seen = new Set(used);
   const free = [];
-  for (let i = 0; i < spectrums.length; i++) {
-    if (!seen.has(cardAt(spectrums, i).index)) free.push(i);
+  for (let i = 0; i < spectra.length; i++) {
+    if (!seen.has(cardAt(spectra, i).index)) free.push(i);
   }
-  const pool = free.length ? free : spectrums.map((_, i) => i);
+  const pool = free.length ? free : spectra.map((_, i) => i);
   const pick = pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))];
-  const card = cardAt(spectrums, pick);
+  const card = cardAt(spectra, pick);
   return { index: card.index, left: card.left, right: card.right, target: randomTarget(rng) };
 }
 
@@ -111,8 +117,9 @@ function advance(room, changes, now) {
 
 // --- transitions ----------------------------------------------------------------
 
-// A brand-new room in the first round's clue phase. null on bad input.
-export function createRoomState({ id, players, rounds, firstPsychic = 0, card, now = Date.now() } = {}) {
+// A brand-new room in the first round's clue phase, dealing from `deck`
+// (`card` must come from that deck). null on bad input.
+export function createRoomState({ id, players, rounds, firstPsychic = 0, deck = 'classic', card, now = Date.now() } = {}) {
   if (typeof id !== 'string' || !id) return null;
   if (!Array.isArray(players) || players.length !== 2) return null;
   if (!players.every((p) => p && typeof p.uname === 'string' && p.uname)) return null;
@@ -127,6 +134,7 @@ export function createRoomState({ id, players, rounds, firstPsychic = 0, card, n
     rounds,
     round: 0,
     firstPsychic,
+    deck: cleanDeck(deck),
     phase: 'clue',
     card: copyCard(card),
     used: [card.index],

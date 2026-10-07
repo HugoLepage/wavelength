@@ -43,7 +43,7 @@
       ".read": true,
       "$room": {
         ".write": "!data.exists() || (data.child('status').val() !== 'finished' && newData.child('step').val() === data.child('step').val() + 1)",
-        ".validate": "$room.matches(/^[a-z0-9]{6,20}$/) && newData.hasChildren(['id', 'status', 'step', 'players', 'rounds', 'round', 'firstPsychic', 'phase', 'card', 'score']) && newData.child('id').val() === $room && (data.exists() || (newData.child('step').val() === 0 && newData.child('status').val() === 'active')) && (!data.exists() || (newData.child('players/0/uname').val() === data.child('players/0/uname').val() && newData.child('players/1/uname').val() === data.child('players/1/uname').val() && newData.child('rounds').val() === data.child('rounds').val() && newData.child('firstPsychic').val() === data.child('firstPsychic').val()))",
+        ".validate": "$room.matches(/^[a-z0-9]{6,20}$/) && newData.hasChildren(['id', 'status', 'step', 'players', 'rounds', 'round', 'firstPsychic', 'phase', 'card', 'score']) && newData.child('id').val() === $room && (data.exists() || (newData.child('step').val() === 0 && newData.child('status').val() === 'active')) && (!data.exists() || (newData.child('players/0/uname').val() === data.child('players/0/uname').val() && newData.child('players/1/uname').val() === data.child('players/1/uname').val() && newData.child('rounds').val() === data.child('rounds').val() && newData.child('firstPsychic').val() === data.child('firstPsychic').val() && newData.child('deck').val() === data.child('deck').val()))",
         "id": { ".validate": "newData.isString()" },
         "status": { ".validate": "newData.val() === 'active' || newData.val() === 'finished'" },
         "step": { ".validate": "newData.isNumber()" },
@@ -56,6 +56,7 @@
         "rounds": { ".validate": "newData.isNumber() && newData.val() >= 3 && newData.val() <= 12" },
         "round": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < newData.parent().child('rounds').val()" },
         "firstPsychic": { ".validate": "newData.val() === 0 || newData.val() === 1" },
+        "deck": { ".validate": "newData.val() === 'classic' || newData.val() === 'spicy'" },
         "phase": { ".validate": "newData.val() === 'clue' || newData.val() === 'guess' || newData.val() === 'reveal' || newData.val() === 'done'" },
         "card": {
           ".validate": "newData.hasChildren(['index', 'left', 'right', 'target']) && newData.child('target').isNumber() && newData.child('target').val() >= 0 && newData.child('target').val() <= 100"

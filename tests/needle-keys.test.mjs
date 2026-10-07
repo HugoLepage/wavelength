@@ -7,12 +7,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Dial } from '../src/scripts/dial.js';
 
+const classList = (...names) => {
+  const set = new Set(names);
+  return { remove: (n) => set.delete(n), contains: (n) => set.has(n) };
+};
+
+// Pressed on just before (.is-pointer hides the focus ring until a key is used).
 const dial = (value) => ({
   _interactive: true,
   _value: value,
   _moveTo(v) {
     this._value = v;
   },
+  root: { classList: classList('dial', 'is-pointer') },
 });
 
 function press(d, key, mods = {}) {
@@ -32,6 +39,12 @@ test('arrows nudge the needle; Shift steps by five', () => {
   assert.equal(d._value, 54);
   press(d, 'End');
   assert.equal(d._value, 100);
+});
+
+test('a key on the dial brings its focus ring back after a press', () => {
+  const d = dial(50);
+  press(d, 'ArrowLeft');
+  assert.equal(d.root.classList.contains('is-pointer'), false);
 });
 
 test('Alt, Ctrl and Cmd combos stay with the browser', () => {

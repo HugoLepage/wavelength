@@ -1,0 +1,22 @@
+---
+// The one-time grown-ups notice: the first time the top bar's chili is
+// switched on in a browser, this asks before any spicy card is dealt. "Turn
+// on" is remembered (spicy.js acknowledgeSpicy) and never asked again; "Not
+// now", ✕, Escape or the backdrop leave spicy mode off. Wired in ui.js.
+import { chiliSvg } from '../scripts/chili.js';
+---
+
+<div class="overlay" id="spicy-overlay">
+  <div class="modal spicy-modal" role="dialog" aria-modal="true" aria-labelledby="spicy-title" aria-describedby="spicy-sub">
+    <button class="btn icon ghost small modal-close" type="button" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button>
+    <div class="spicy-art" aria-hidden="true"><Fragment set:html={chiliSvg('chili is-lit')} /></div>
+    <h2 class="modal-title" id="spicy-title">Spicy mode</h2>
+    <p class="modal-sub" id="spicy-sub">Grown-up cards: dating, drinking, innuendo. <b>Adults only.</b></p>
+    <div class="modal-actions">
+      <button class="btn primary big" id="spicy-confirm" type="button">Turn on</button>
+      <button class="btn ghost" type="button" data-close>Not now</button>
+    </div>
+  </div>
+</div>

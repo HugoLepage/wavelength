@@ -75,6 +75,13 @@
   --team-4: #4cc26b;
   --team-5: #3fa7ff;
 
+  /* spicy mode: the chili (top bar, chips, the online header badge) */
+  --c-chili: #e5352b;
+  --c-chili-edge: #a3211a;
+  --c-chili-stem: #2e9b46;
+  --c-chili-soft: rgba(229, 53, 43, 0.12);
+  --c-chili-text: #b3261d;
+
   /* scrims and the toast (inverted against the page, both ways round) */
   --c-scrim: rgba(18, 21, 44, 0.46);
   --c-toast-bg: #1d2140;
@@ -91,7 +98,6 @@
   --dial-needle: #ff4d41;
   --dial-needle-edge: #ffffff;
   --dial-needle-shadow: rgba(14, 16, 40, 0.38);
-  --dial-knob-edge: #ffffff;
   --dial-shadow: rgba(29, 33, 64, 0.3);
   --shutter-1: #4053d8;
   --shutter-2: #2433a0;
@@ -162,6 +168,12 @@
   --team-4: #4cc26b;
   --team-5: #3fa7ff;
 
+  --c-chili: #ff4b3e;
+  --c-chili-edge: #b8261d;
+  --c-chili-stem: #4cc764;
+  --c-chili-soft: rgba(255, 75, 62, 0.2);
+  --c-chili-text: #ff7d73;
+
   --c-scrim: rgba(4, 5, 14, 0.7);
   --c-toast-bg: #f1efe9;
   --c-toast-ink: #1d2140;
@@ -176,7 +188,6 @@
   --dial-needle: #ff4d41;
   --dial-needle-edge: #ffffff;
   --dial-needle-shadow: rgba(0, 0, 0, 0.5);
-  --dial-knob-edge: #ffffff;
   --dial-shadow: rgba(0, 0, 0, 0.6);
   --shutter-1: #4a5ee6;
   --shutter-2: #2a39b0;
@@ -498,14 +509,78 @@ html.joining .screens:not(:has(> .screen.active))::after {
   display: none;
 }
 
-@media (max-width: 400px) {
+/* Spicy mode's chili (spicy.js): an outline like its neighbours while off;
+   on, a red pepper with a green stem. Keyed off <html data-spicy>, stamped
+   before first paint (Layout.astro), so it never flashes on a reload. */
+.chili .chili-body,
+.chili .chili-stem {
+  transition: fill 0.25s ease, stroke 0.25s ease;
+}
+
+/* .is-lit: the chips and badges that always mean "spicy cards" (chili.js). */
+:root[data-spicy='on'] .spicy-btn .chili-body,
+.chili.is-lit .chili-body {
+  fill: var(--c-chili);
+  stroke: var(--c-chili-edge);
+}
+
+:root[data-spicy='on'] .spicy-btn .chili-stem,
+.chili.is-lit .chili-stem {
+  stroke: var(--c-chili-stem);
+}
+
+/* Switched on (ui.js adds .is-popping): a little pop and wiggle. */
+.spicy-btn.is-popping .chili {
+  animation: chili-pop 0.62s var(--ease-out);
+  transform-origin: 55% 45%;
+}
+
+@keyframes chili-pop {
+  0% {
+    transform: scale(0.7) rotate(0);
+  }
+  30% {
+    transform: scale(1.28) rotate(-14deg);
+  }
+  50% {
+    transform: scale(1.12) rotate(11deg);
+  }
+  70% {
+    transform: scale(1.04) rotate(-6deg);
+  }
+  85% {
+    transform: scale(1) rotate(3deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+/* A phone: the wordmark and four buttons share 330–390px, so everything packs
+   a little tighter — down to 360px wide "Sign in" still gets its full pill
+   (below that the wordmark gives way to its glyph). */
+@media (max-width: 419px) {
+  .topbar {
+    gap: 4px;
+  }
+
   .logo {
-    font-size: 20px;
+    font-size: 19px;
     gap: 6px;
+    padding-right: 4px;
   }
 
   .topbar-actions {
     gap: 0;
+  }
+
+  .topbar .btn.icon {
+    --btn-h: 38px;
+  }
+
+  .topbar .online-btn.small {
+    margin-right: 0;
+    padding: 0 0.7em;
   }
 
   .logo-glyph {
@@ -514,9 +589,16 @@ html.joining .screens:not(:has(> .screen.active))::after {
   }
 }
 
+/* Never wider than its pill, should the pill ever be squeezed. */
+#online-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Signed in (or the saved name shown while the session is checked), a phone
    gives the name the wordmark's room. */
-@media (max-width: 459px) {
+@media (max-width: 499px) {
   .topbar:has(#online-name:not(.hidden)) .logo-word {
     display: none;
   }
@@ -927,6 +1009,33 @@ html.joining .screens:not(:has(> .screen.active))::after {
   opacity: 0.55;
 }
 
+/* --- spicy chip -----------------------------------------------------------------------------
+   <span class="spicy-chip">{chiliSvg('chili is-lit')}Spicy</span> — "these
+   cards are the grown-up ones": on an incoming challenge and next to the
+   lobby's rounds. Always the lit chili, whatever the top bar shows. */
+
+.spicy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  padding: 2px 8px 2px 5px;
+  border-radius: 999px;
+  background: var(--c-chili-soft);
+  color: var(--c-chili-text);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.spicy-chip .chili {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.4;
+}
+
 /* --- team badge ---------------------------------------------------------------------------
    teamBadgeHtml() in teams.js: a disc of --team with the critter ~78% inset. */
 
@@ -1109,6 +1218,36 @@ html.joining .screens:not(:has(> .screen.active))::after {
   margin-top: 20px;
 }
 
+/* The spicy-mode notice (SpicyNotice.astro): a big lit chili on a warm disc. */
+.spicy-modal {
+  max-width: 380px;
+}
+
+.spicy-art {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin: 2px auto 14px;
+  border-radius: 50%;
+  background: var(--c-chili-soft);
+}
+
+.spicy-art .chili {
+  width: 52px;
+  height: 52px;
+  stroke-width: 1.8;
+  transform-origin: 55% 45%;
+}
+
+.overlay.show .spicy-art .chili {
+  animation: chili-pop 0.7s var(--ease-out) 0.15s both;
+}
+
+.spicy-modal .modal-sub b {
+  color: var(--c-ink);
+}
+
 @keyframes scrim-in {
   from {
     opacity: 0;
@@ -1176,6 +1315,12 @@ body[data-screen$='-game'] .toast {
   --toast-from: -24px;
   top: calc(var(--safe-t) + max(4px, (var(--topbar-h) - 48px) / 2));
   bottom: auto;
+}
+
+/* …except feedback on a top-bar control (the chili), which must not hide the
+   control it reports on: that one starts just below the bar (toast(…, { underBar })). */
+body[data-screen$='-game'] .toast.under-bar {
+  top: calc(var(--safe-t) + var(--topbar-h) + 6px);
 }
 
 /* --- fx (fx.js) ---------------------------------------------------------------------------- */

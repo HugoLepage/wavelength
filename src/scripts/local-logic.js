@@ -4,14 +4,16 @@
 // after every step and restored exactly on Resume.
 //
 // Kept free of the DOM, of teams.js (which pulls in the critter SVGs through
-// Vite) and of the spectrum list — card lookup is passed in as `spectrumAt` —
-// so node can test it directly (tests/local-logic.test.mjs).
+// Vite) and of the card lists — cards come from a `dealer` the caller passes
+// in (see "dealing") — so node can test it directly (tests/local-logic.test.mjs).
 //
 // A turn moves through the phases
-//   handoff → psychic → guess → (rival) → reveal → next turn's handoff | done
+//   psychic → guess → (rival) → reveal → next turn's psychic | done
 // and every transition returns the next state, or null when it is not allowed
 // from the current one (a double tap, a stale button), so callers can ignore
-// it safely.
+// it safely. A turn opens straight on its psychic with the target not yet
+// shown (`targetShown: false`): the device is passed to them and their one
+// step is Show target. Only once they have seen it can they hand over.
 
 import { MAX_POINTS, RATINGS, clampValue, randomTarget, rateScore, rivalPoints, scoreFor } from './scoring.js';
 
@@ -22,7 +24,7 @@ export const MIN_ROUNDS = 1;
 export const MAX_ROUNDS = 10;
 export const DEFAULT_TEAMS = 2;
 export const DEFAULT_ROUNDS = 3;
-export const PHASES = ['handoff', 'psychic', 'guess', 'rival', 'reveal', 'done'];
+export const PHASES = ['psychic', 'guess', 'rival', 'reveal', 'done'];
 
 const round1 = (v) => Math.round(v * 10) / 10;
 
@@ -52,6 +54,10 @@ export const isLastTurn = (g) => g.round >= g.rounds - 1 && g.turn >= g.teams.le
 
 export const inProgress = (g) => !!g && PHASES.includes(g.phase) && g.phase !== 'done';
 
+// Has this turn's psychic looked at the target yet? Until then nobody has,
+// and the card can still be swapped for another unnoticed (switchDeck).
+export const targetSeen = (g) => g.phase !== 'psychic' || g.targetShown;
+
 // The team whose turn follows this one (null after the last turn).
 export function nextTeamOf(g) {
   if (isLastTurn(g)) return null;
@@ -60,17 +66,34 @@ export function nextTeamOf(g) {
 
 // --- dealing ------------------------------------------------------------------------
 
-// The next card off the game's own deck (so cards never repeat until the whole
-// list has been seen) with a fresh secret target; the turn's needle, guess and
-// rival call start over.
-function deal(g, spectrumAt, rng) {
-  const deck = g.deck;
-  const index = deck.length ? deck[g.deckPos % deck.length] : 0;
-  const s = spectrumAt(index);
+// Cards come from a `dealer` the caller passes in (local.js builds it from
+// spectra.js and spicy.js), so the card lists never load here:
+//   deck                     'classic' | 'spicy' — the deck in force right now
+//   spectrumAt(index, deck)  → { index, left, right }
+//   shuffledDeck(rng, deck)  → every card index of that deck, shuffled
+//
+// The game keeps its own shuffled order of each deck it has dealt from,
+// `decks: { classic: { order, pos } }`, made the first time a card comes from
+// that deck: no card repeats within a deck until all of it has been seen
+// (then it is shuffled afresh), and flipping the chili back and forth picks
+// each deck up where it left off. Every card records its `deck`, since an
+// index only means something within its own deck.
+const DECK_NAMES = ['classic', 'spicy']; // spectra.js DECKS — that module loads the lists
+const deckName = (d) => (d === 'spicy' ? 'spicy' : 'classic');
+
+// The next card of the deck in force, with a fresh secret target; the turn's
+// needle, guess and rival call start over. Whether the target is on show is
+// the caller's call: a new turn hides it, a new card keeps the psychic's view
+// as it was.
+function deal(g, dealer, rng) {
+  const deck = deckName(dealer.deck);
+  let pile = g.decks[deck];
+  if (!pile || pile.pos >= pile.order.length) pile = { order: dealer.shuffledDeck(rng, deck), pos: 0 };
+  const s = dealer.spectrumAt(pile.order.length ? pile.order[pile.pos] : 0, deck);
   return {
     ...g,
-    deckPos: g.deckPos + 1,
-    card: { index: s.index, left: s.left, right: s.right, target: randomTarget(rng) },
+    decks: { ...g.decks, [deck]: { order: pile.order, pos: pile.pos + 1 } },
+    card: { index: s.index, deck, left: s.left, right: s.right, target: randomTarget(rng) },
     needle: 50,
     guess: null,
     call: null,
@@ -81,10 +104,12 @@ function deal(g, spectrumAt, rng) {
 // --- transitions -----------------------------------------------------------------------
 
 // A new game: `teams` from teams.js (scores reset here), the first card dealt
-// to team 0, round 0.
-export function createGame({ teams, rounds, rival, deck, deckPos = 0, spectrumAt, rng = Math.random, now }) {
+// to team 0's psychic, round 0, target not yet shown. `decks` carries every
+// deck's shuffled order on from an earlier game (a rematch); without it each
+// deck is shuffled afresh when first dealt from.
+export function createGame({ teams, rounds, rival, decks, dealer, rng = Math.random, now }) {
   const list = (teams || []).slice(0, MAX_TEAMS).map((t, i) => ({ ...t, id: i, score: 0 }));
-  if (!list.length || !Array.isArray(deck)) return null;
+  if (!list.length || !dealer) return null;
   const at = now ?? Date.now();
   return deal(
     {
@@ -94,9 +119,9 @@ export function createGame({ teams, rounds, rival, deck, deckPos = 0, spectrumAt
       rival: !!rival && list.length >= 2,
       round: 0,
       turn: 0,
-      phase: 'handoff',
-      deck: deck.slice(),
-      deckPos: Math.max(0, Math.floor(deckPos) || 0),
+      phase: 'psychic',
+      targetShown: false,
+      decks: cleanDecks(decks),
       card: null,
       needle: 50,
       guess: null,
@@ -106,26 +131,39 @@ export function createGame({ teams, rounds, rival, deck, deckPos = 0, spectrumAt
       startedAt: at,
       updatedAt: at,
     },
-    spectrumAt,
+    dealer,
     rng,
   );
 }
 
-// The psychic has the device.
-export function beginPsychic(g, now) {
-  if (g?.phase !== 'handoff') return null;
-  return stamp({ ...g, phase: 'psychic' }, now);
-}
-
-// The psychic does not like this card: a new one, with a new target.
-export function redraw(g, spectrumAt, rng = Math.random, now) {
+// The psychic has the device and looks: the target is theirs to see for the
+// rest of the turn (asking again, e.g. after a reload, is fine).
+export function showTarget(g, now) {
   if (g?.phase !== 'psychic') return null;
-  return stamp(deal(g, spectrumAt, rng), now);
+  return stamp({ ...g, targetShown: true }, now);
 }
 
-// Clue given, target hidden: the team takes the dial.
+// The psychic does not like this card: a new one from the deck in force, with
+// a new target, before or after they have looked (if they had, the new target
+// is on show at once).
+export function redraw(g, dealer, rng = Math.random, now) {
+  if (g?.phase !== 'psychic') return null;
+  return stamp(deal(g, dealer, rng), now);
+}
+
+// The chili was flipped: while nobody has seen this turn's target, its card is
+// dealt again from the deck now in force. null when it is too late (the
+// psychic has looked, so the change waits for the next card) or when the card
+// already comes from that deck.
+export function switchDeck(g, dealer, rng = Math.random, now) {
+  if (!g || !dealer || targetSeen(g) || g.card.deck === deckName(dealer.deck)) return null;
+  return stamp(deal(g, dealer, rng), now);
+}
+
+// Clue given, target hidden: the team takes the dial. Not before the psychic
+// has seen the target.
 export function handOver(g, now) {
-  if (g?.phase !== 'psychic') return null;
+  if (g?.phase !== 'psychic' || !g.targetShown) return null;
   return stamp({ ...g, phase: 'guess', needle: 50 }, now);
 }
 
@@ -151,6 +189,7 @@ function scoreTurn(g) {
     round: g.round,
     team: g.turn,
     index: g.card.index,
+    deck: g.card.deck,
     left: g.card.left,
     right: g.card.right,
     target,
@@ -185,31 +224,21 @@ export function callSide(g, call, now) {
 }
 
 // After the reveal: the next team's turn (a new round after the last team),
-// or the end of the game.
-export function nextTurn(g, spectrumAt, rng = Math.random, now) {
+// straight to its psychic with the new target hidden, or the end of the game.
+export function nextTurn(g, dealer, rng = Math.random, now) {
   if (g?.phase !== 'reveal') return null;
   if (isLastTurn(g)) return stamp({ ...g, phase: 'done' }, now);
   const wrap = g.turn >= g.teams.length - 1;
-  return stamp(
-    deal({ ...g, phase: 'handoff', turn: wrap ? 0 : g.turn + 1, round: wrap ? g.round + 1 : g.round }, spectrumAt, rng),
-    now,
-  );
+  const turn = wrap ? 0 : g.turn + 1;
+  const round = wrap ? g.round + 1 : g.round;
+  return stamp(deal({ ...g, phase: 'psychic', targetShown: false, turn, round }, dealer, rng), now);
 }
 
-// Same teams, same settings, scores back to zero — and the deck carries on,
-// so the rematch deals cards nobody has seen yet.
-export function rematch(g, spectrumAt, rng = Math.random, now) {
+// Same teams, same settings, scores back to zero — and every deck's order
+// carries on, so the rematch deals cards nobody has seen yet.
+export function rematch(g, dealer, rng = Math.random, now) {
   if (!g) return null;
-  return createGame({
-    teams: g.teams,
-    rounds: g.rounds,
-    rival: g.rival,
-    deck: g.deck,
-    deckPos: g.deckPos,
-    spectrumAt,
-    rng,
-    now,
-  });
+  return createGame({ teams: g.teams, rounds: g.rounds, rival: g.rival, decks: g.decks, dealer, rng, now });
 }
 
 // --- results ------------------------------------------------------------------------------
@@ -235,9 +264,33 @@ const isObj = (o) => !!o && typeof o === 'object' && !Array.isArray(o);
 const isStr = (s) => typeof s === 'string';
 const isNum = (n) => typeof n === 'number' && Number.isFinite(n);
 
+// Every deck's shuffled order, as saved: known decks only, whole card indices,
+// a position within the order (at its end: all seen, shuffled afresh next).
+function cleanDecks(raw) {
+  const decks = {};
+  if (!isObj(raw)) return decks;
+  for (const name of DECK_NAMES) {
+    const pile = raw[name];
+    if (!isObj(pile) || !Array.isArray(pile.order)) continue;
+    const order = pile.order.filter((n) => Number.isInteger(n) && n >= 0);
+    decks[name] = { order, pos: clampInt(pile.pos, 0, order.length, 0) };
+  }
+  return decks;
+}
+
 // A saved game, checked field by field. Anything malformed (an old version, a
 // hand-edited entry, a half-written save) returns null rather than a game
 // that would break the screen.
+//
+// Saves from before turns opened straight on the psychic can sit in the old
+// 'handoff' phase (the team was about to pass the device): they resume as
+// that turn's psychic with the target not shown — exactly where it stood.
+// Such saves carry no `targetShown` either: in the psychic phase it reads as
+// not shown, after it (the team has the dial, or the reveal) as shown.
+//
+// Saves from before spicy mode dealt from a single order, `deck` (card
+// indices) with its position `deckPos`, and only ever classic cards: that
+// order becomes the classic deck's, and a card that names no deck is classic.
 export function normalizeGame(raw) {
   if (!isObj(raw) || raw.v !== VERSION) return null;
   if (!Array.isArray(raw.teams) || raw.teams.length < MIN_TEAMS || raw.teams.length > MAX_TEAMS) return null;
@@ -253,11 +306,12 @@ export function normalizeGame(raw) {
       name: t.name,
     });
   }
-  if (!PHASES.includes(raw.phase)) return null;
+  const phase = raw.phase === 'handoff' ? 'psychic' : raw.phase;
+  if (!PHASES.includes(phase)) return null;
   const rounds = clampInt(raw.rounds, MIN_ROUNDS, MAX_ROUNDS, DEFAULT_ROUNDS);
   const c = raw.card;
   if (!isObj(c) || !isStr(c.left) || !isStr(c.right) || !isNum(c.target)) return null;
-  const deck = Array.isArray(raw.deck) ? raw.deck.filter((n) => Number.isInteger(n) && n >= 0) : [];
+  const decks = cleanDecks(isObj(raw.decks) ? raw.decks : { classic: { order: raw.deck, pos: raw.deckPos } });
   const g = {
     v: VERSION,
     teams,
@@ -265,10 +319,16 @@ export function normalizeGame(raw) {
     rival: !!raw.rival && teams.length >= 2,
     round: clampInt(raw.round, 0, rounds - 1, 0),
     turn: clampInt(raw.turn, 0, teams.length - 1, 0),
-    phase: raw.phase,
-    deck,
-    deckPos: clampInt(raw.deckPos, 0, Number.MAX_SAFE_INTEGER, 0),
-    card: { index: Number.isInteger(c.index) ? c.index : 0, left: c.left, right: c.right, target: clampValue(c.target) },
+    phase,
+    targetShown: phase === 'psychic' ? raw.targetShown === true : true,
+    decks,
+    card: {
+      index: Number.isInteger(c.index) ? c.index : 0,
+      deck: deckName(c.deck),
+      left: c.left,
+      right: c.right,
+      target: clampValue(c.target),
+    },
     needle: isNum(raw.needle) ? round1(clampValue(raw.needle)) : 50,
     guess: isNum(raw.guess) ? round1(clampValue(raw.guess)) : null,
     call: raw.call === 'left' || raw.call === 'right' ? raw.call : null,
